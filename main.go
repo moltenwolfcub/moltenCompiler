@@ -99,7 +99,12 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	println(assembleFromTokens(tokens))
+	asm := assembleFromTokens(tokens)
+	err = writeToFile(asm)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 }
 
 func checkCLA() error {
@@ -116,4 +121,25 @@ func loadProgram(fileName string) (string, error) {
 	}
 
 	return string(file), nil
+}
+
+func writeToFile(asm string) error {
+	buildDir := "build"
+
+	if _, err := os.Stat(buildDir); errors.Is(err, os.ErrNotExist) {
+		if err := os.Mkdir(buildDir, os.ModePerm); err != nil {
+			return fmt.Errorf("error creating logger directory: %v", err.Error())
+		}
+	}
+
+	file, err := os.Create(buildDir + "/test.asm")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.WriteString(asm)
+	if err != nil {
+		return err
+	}
+	return nil
 }
