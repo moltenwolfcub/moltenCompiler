@@ -59,7 +59,7 @@ func tokenise(str string) ([]Token, error) {
 		} else if r == ';' {
 			tokens = append(tokens, Token{tokenType: semiColon})
 		} else {
-			return nil, fmt.Errorf("unknown token: %s", buf)
+			return nil, fmt.Errorf("unknown token: %c", r)
 		}
 	}
 
