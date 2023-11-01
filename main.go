@@ -1,24 +1,39 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Println("Bad usage! Correct usage is:\n\"molten <main.mltn>\"")
-		return
-	}
-	fileName := os.Args[1]
-
-	file, err := os.ReadFile(fileName)
+	err := checkCLA()
 	if err != nil {
-		fmt.Println("Cannot read the file")
+		fmt.Println(err.Error())
 		return
 	}
-
-	program := string(file)
+	program, err := loadProgram(os.Args[1])
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	print(program)
+}
+
+func checkCLA() error {
+	if len(os.Args) != 2 {
+		return errors.New("bad usage. correct usage is:\n\"molten <main.mltn>\"")
+	}
+	return nil
+}
+
+func loadProgram(fileName string) (string, error) {
+	file, err := os.ReadFile(fileName)
+	if err != nil {
+		return "", errors.New("cannot read the file")
+	}
+
+	return string(file), nil
+
 }
