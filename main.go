@@ -66,6 +66,22 @@ func tokenise(str string) ([]Token, error) {
 	return tokens, nil
 }
 
+func assembleFromTokens(tokens []Token) string {
+	output := "global _start\n_start:\n"
+	for i, token := range tokens {
+		if token.tokenType == exit {
+			if i+1 < len(tokens) && tokens[i+1].tokenType == intLiteral {
+				if i+2 < len(tokens) && tokens[i+2].tokenType == semiColon {
+					output += "\tmov rax, 60\n"
+					output += "\tmov rdi, " + tokens[i+1].value + "\n"
+					output += "\tsyscall\n"
+				}
+			}
+		}
+	}
+	return output
+}
+
 func main() {
 	err := checkCLA()
 	if err != nil {
@@ -83,7 +99,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	println(tokens) //use debugger to view for now
+	println(assembleFromTokens(tokens))
 }
 
 func checkCLA() error {
