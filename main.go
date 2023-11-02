@@ -4,67 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"unicode"
 )
-
-type TokenType int
-
-const (
-	exit TokenType = iota
-	intLiteral
-	semiColon
-)
-
-type Token struct {
-	tokenType TokenType
-	value     string
-}
-
-func tokenise(str string) ([]Token, error) {
-	tokens := []Token{}
-	buf := ""
-
-	for i := 0; i < len(str); i++ {
-		r := rune(str[i])
-
-		if unicode.IsSpace(r) {
-			continue
-		} else if unicode.IsLetter(r) {
-			buf += string(str[i])
-			i++
-			for unicode.IsDigit(rune(str[i])) || unicode.IsLetter(rune(str[i])) {
-				buf += string(str[i])
-				i++
-			}
-			i--
-
-			if buf == "exit" {
-				tokens = append(tokens, Token{tokenType: exit})
-
-				buf = ""
-			} else {
-				return nil, fmt.Errorf("unknown keyword: %s", buf)
-			}
-		} else if unicode.IsDigit(r) {
-			buf += string(str[i])
-			i++
-			for unicode.IsDigit(rune(str[i])) {
-				buf += string(str[i])
-				i++
-			}
-			i--
-			tokens = append(tokens, Token{tokenType: intLiteral, value: buf})
-
-			buf = ""
-		} else if r == ';' {
-			tokens = append(tokens, Token{tokenType: semiColon})
-		} else {
-			return nil, fmt.Errorf("unknown token: %c", r)
-		}
-	}
-
-	return tokens, nil
-}
 
 func assembleFromTokens(tokens []Token) string {
 	output := "global _start\n_start:\n"
@@ -94,7 +34,9 @@ func main() {
 		return
 	}
 
-	tokens, err := tokenise(program)
+	tokeniser := NewTokeniser(program)
+
+	tokens, err := tokeniser.Tokenise()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
