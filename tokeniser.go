@@ -19,7 +19,8 @@ type Token struct {
 }
 
 type Tokeniser struct {
-	program string
+	program      string
+	currentIndex int
 }
 
 func NewTokeniser(program string) Tokeniser {
@@ -30,46 +31,55 @@ func NewTokeniser(program string) Tokeniser {
 
 func (t Tokeniser) Tokenise() ([]Token, error) {
 	tokens := []Token{}
-	buf := ""
+	buf := []rune{}
 
-	for i := 0; i < len(t.program); i++ {
-		r := rune(t.program[i])
+	for t.peek() >= 0 {
+		if unicode.IsSpace(t.peek()) {
+			t.consume()
 
-		if unicode.IsSpace(r) {
-			continue
-		} else if unicode.IsLetter(r) {
-			buf += string(t.program[i])
-			i++
-			for unicode.IsDigit(rune(t.program[i])) || unicode.IsLetter(rune(t.program[i])) {
-				buf += string(t.program[i])
-				i++
-			}
-			i--
-
-			if buf == "exit" {
-				tokens = append(tokens, Token{tokenType: exit})
-
-				buf = ""
-			} else {
-				return nil, fmt.Errorf("unknown keyword: %s", buf)
-			}
-		} else if unicode.IsDigit(r) {
-			buf += string(t.program[i])
-			i++
-			for unicode.IsDigit(rune(t.program[i])) {
-				buf += string(t.program[i])
-				i++
-			}
-			i--
-			tokens = append(tokens, Token{tokenType: intLiteral, value: buf})
-
-			buf = ""
-		} else if r == ';' {
+		} else if t.peek() == ';' {
+			t.consume()
 			tokens = append(tokens, Token{tokenType: semiColon})
+
+		} else if unicode.IsLetter(t.peek()) {
+			buf = append(buf, t.consume())
+			for t.peek() >= 0 && (unicode.IsLetter(t.peek()) || unicode.IsDigit(t.peek())) {
+				buf = append(buf, t.consume())
+			}
+
+			if string(buf) == "exit" {
+				tokens = append(tokens, Token{tokenType: exit})
+				buf = []rune{}
+			} else {
+				return nil, fmt.Errorf("unknown keyword: %s", string(buf))
+			}
+
+		} else if unicode.IsDigit(t.peek()) {
+			buf = append(buf, t.consume())
+			for t.peek() >= 0 && unicode.IsDigit(t.peek()) {
+				buf = append(buf, t.consume())
+			}
+
+			tokens = append(tokens, Token{tokenType: intLiteral, value: string(buf)})
+			buf = []rune{}
+
 		} else {
-			return nil, fmt.Errorf("unknown token: %c", r)
+			return nil, fmt.Errorf("unknown token: %c", t.peek())
 		}
 	}
 
 	return tokens, nil
+}
+
+func (t Tokeniser) peek() rune {
+	if t.currentIndex >= len(t.program) {
+		return -1
+	}
+	return rune(t.program[t.currentIndex])
+}
+
+func (t *Tokeniser) consume() rune {
+	r := rune(t.program[t.currentIndex])
+	t.currentIndex++
+	return r
 }
