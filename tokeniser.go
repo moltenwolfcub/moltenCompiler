@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"unicode"
+
+	opt "github.com/moltenwolfcub/moltenCompiler/optional"
 )
 
 type TokenType int
@@ -15,7 +17,7 @@ const (
 
 type Token struct {
 	tokenType TokenType
-	value     Optional[string]
+	value     opt.Optional[string]
 }
 
 type Tokeniser struct {
@@ -60,7 +62,7 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 				buf = append(buf, t.consume())
 			}
 
-			tokens = append(tokens, Token{tokenType: intLiteral, value: ToOptional(string(buf))})
+			tokens = append(tokens, Token{tokenType: intLiteral, value: opt.ToOptional(string(buf))})
 			buf = []rune{}
 
 		} else {
@@ -71,11 +73,11 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 	return tokens, nil
 }
 
-func (t Tokeniser) peek() Optional[rune] {
+func (t Tokeniser) peek() opt.Optional[rune] {
 	if t.currentIndex >= len(t.program) {
-		return NewOptional[rune]()
+		return opt.NewOptional[rune]()
 	}
-	return ToOptional(rune(t.program[t.currentIndex]))
+	return opt.ToOptional(rune(t.program[t.currentIndex]))
 }
 
 func (t *Tokeniser) consume() rune {
