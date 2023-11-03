@@ -33,17 +33,17 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 	tokens := []Token{}
 	buf := []rune{}
 
-	for t.peek() >= 0 {
-		if unicode.IsSpace(t.peek()) {
+	for t.peek().HasValue() {
+		if unicode.IsSpace(t.peek().MustGetValue()) {
 			t.consume()
 
-		} else if t.peek() == ';' {
+		} else if t.peek().MustGetValue() == ';' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: semiColon})
 
-		} else if unicode.IsLetter(t.peek()) {
+		} else if unicode.IsLetter(t.peek().MustGetValue()) {
 			buf = append(buf, t.consume())
-			for t.peek() >= 0 && (unicode.IsLetter(t.peek()) || unicode.IsDigit(t.peek())) {
+			for t.peek().HasValue() && (unicode.IsLetter(t.peek().MustGetValue()) || unicode.IsDigit(t.peek().MustGetValue())) {
 				buf = append(buf, t.consume())
 			}
 
@@ -54,9 +54,9 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 				return nil, fmt.Errorf("unknown keyword: %s", string(buf))
 			}
 
-		} else if unicode.IsDigit(t.peek()) {
+		} else if unicode.IsDigit(t.peek().MustGetValue()) {
 			buf = append(buf, t.consume())
-			for t.peek() >= 0 && unicode.IsDigit(t.peek()) {
+			for t.peek().HasValue() && unicode.IsDigit(t.peek().MustGetValue()) {
 				buf = append(buf, t.consume())
 			}
 
@@ -71,11 +71,11 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 	return tokens, nil
 }
 
-func (t Tokeniser) peek() rune {
+func (t Tokeniser) peek() Optional[rune] {
 	if t.currentIndex >= len(t.program) {
-		return -1
+		return NewOptional[rune]()
 	}
-	return rune(t.program[t.currentIndex])
+	return NewOptional[rune](rune(t.program[t.currentIndex]))
 }
 
 func (t *Tokeniser) consume() rune {
