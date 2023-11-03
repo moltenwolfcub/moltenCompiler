@@ -7,15 +7,15 @@ type Optional[T any] struct {
 	has   bool
 }
 
-func NewOptional[T any](start ...T) Optional[T] {
-	if len(start) > 0 {
-		return Optional[T]{
-			value: start[0],
-			has:   true,
-		}
-	}
-
+func NewOptional[T any]() Optional[T] {
 	return Optional[T]{}
+}
+
+func ToOptional[T any](start T) Optional[T] {
+	return Optional[T]{
+		value: start,
+		has:   true,
+	}
 }
 
 func (o Optional[T]) HasValue() bool {

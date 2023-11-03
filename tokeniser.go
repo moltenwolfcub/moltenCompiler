@@ -75,7 +75,7 @@ func (t Tokeniser) peek() Optional[rune] {
 	if t.currentIndex >= len(t.program) {
 		return NewOptional[rune]()
 	}
-	return NewOptional[rune](rune(t.program[t.currentIndex]))
+	return ToOptional[rune](rune(t.program[t.currentIndex]))
 }
 
 func (t *Tokeniser) consume() rune {
