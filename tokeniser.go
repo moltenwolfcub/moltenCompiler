@@ -15,7 +15,7 @@ const (
 
 type Token struct {
 	tokenType TokenType
-	value     string
+	value     Optional[string]
 }
 
 type Tokeniser struct {
@@ -60,11 +60,11 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 				buf = append(buf, t.consume())
 			}
 
-			tokens = append(tokens, Token{tokenType: intLiteral, value: string(buf)})
+			tokens = append(tokens, Token{tokenType: intLiteral, value: ToOptional(string(buf))})
 			buf = []rune{}
 
 		} else {
-			return nil, fmt.Errorf("unknown token: %c", t.peek())
+			return nil, fmt.Errorf("unknown token: %c", t.peek().MustGetValue())
 		}
 	}
 

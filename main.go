@@ -13,7 +13,7 @@ func assembleFromTokens(tokens []Token) string {
 			if i+1 < len(tokens) && tokens[i+1].tokenType == intLiteral {
 				if i+2 < len(tokens) && tokens[i+2].tokenType == semiColon {
 					output += "\tmov rax, 60\n"
-					output += "\tmov rdi, " + tokens[i+1].value + "\n"
+					output += "\tmov rdi, " + tokens[i+1].value.MustGetValue() + "\n"
 					output += "\tsyscall\n"
 				}
 			}
