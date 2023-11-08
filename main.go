@@ -6,22 +6,6 @@ import (
 	"os"
 )
 
-func assembleFromTokens(tokens []Token) string {
-	output := "global _start\n_start:\n"
-	for i, token := range tokens {
-		if token.tokenType == exit {
-			if i+1 < len(tokens) && tokens[i+1].tokenType == intLiteral {
-				if i+2 < len(tokens) && tokens[i+2].tokenType == semiColon {
-					output += "\tmov rax, 60\n"
-					output += "\tmov rdi, " + tokens[i+1].value.MustGetValue() + "\n"
-					output += "\tsyscall\n"
-				}
-			}
-		}
-	}
-	return output
-}
-
 func main() {
 	err := checkCLA()
 	if err != nil {
@@ -35,13 +19,27 @@ func main() {
 	}
 
 	tokeniser := NewTokeniser(program)
-
 	tokens, err := tokeniser.Tokenise()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	asm := assembleFromTokens(tokens)
+
+	parser := NewParser(tokens)
+	rootNode, err := parser.Parse()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	root, err := rootNode.GetValue()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	generator := NewGenerator(root)
+	asm := generator.Generate()
+
 	err = writeToFile(asm)
 	if err != nil {
 		fmt.Println(err.Error())

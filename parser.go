@@ -46,7 +46,7 @@ func (p Parser) Parse() (opt.Optional[NodeExit], error) {
 	return node, nil
 }
 
-func (p Parser) ParseExpr() opt.Optional[NodeExpr] {
+func (p *Parser) ParseExpr() opt.Optional[NodeExpr] {
 	if p.peek().HasValue() && p.peek().MustGetValue().tokenType == intLiteral {
 		return opt.ToOptional(NodeExpr{intLiteral: p.consume()})
 	}
