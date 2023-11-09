@@ -1,7 +1,13 @@
 $$
 \begin{align}
 	
-	[\textcolor{red}{exit}] &\to \textcolor{cyan}{exit}([\textcolor{lime}{expr}]);
+	[\textcolor{red}{prog}] &\to [\textcolor{lime}{stmt}]^*
+	\\
+	[\textcolor{red}{stmt}] &\to \begin{cases}
+		\textcolor{cyan}{exit}([\textcolor{lime}{expr}]);\\
+		\textcolor{cyan}{var}\space\textcolor{yellow}{name};\\
+		\textcolor{yellow}{name}=[\textcolor{lime}{expr}];
+	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \text{intLiteral}
 
