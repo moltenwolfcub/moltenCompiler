@@ -7,3 +7,13 @@ $$
 
 \end{align}
 $$
+
+
+### Tmp:
+
+#### Variable syntax
+access var name type;\
+private var score int;\
+score = 5;
+
+score := 5 (assume private when using :=)
