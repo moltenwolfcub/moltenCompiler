@@ -37,6 +37,8 @@ func (p Parser) Parse() (opt.Optional[NodeExit], error) {
 
 			if nodeExpr := p.ParseExpr(); nodeExpr.HasValue() {
 				node.SetValue(NodeExit{expression: nodeExpr.MustGetValue()})
+			} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == closeRoundBracket {
+				node.SetValue(NodeExit{expression: NodeExpr{intLiteral: Token{tokenType: intLiteral, value: opt.ToOptional("0")}}})
 			} else {
 				return opt.NewOptional[NodeExit](), errors.New("invalid expression")
 			}
