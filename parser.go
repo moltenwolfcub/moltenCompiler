@@ -28,12 +28,23 @@ func (p Parser) Parse() (opt.Optional[NodeExit], error) {
 	node := opt.NewOptional[NodeExit]()
 	for p.peek().HasValue() {
 		if p.peek().MustGetValue().tokenType == exit {
+			if !p.peek(1).HasValue() || p.peek(1).MustGetValue().tokenType != openRoundBracket {
+				return opt.NewOptional[NodeExit](), errors.New("expected '(' after 'exit'")
+			}
+
+			p.consume()
 			p.consume()
 
 			if nodeExpr := p.ParseExpr(); nodeExpr.HasValue() {
 				node.SetValue(NodeExit{expression: nodeExpr.MustGetValue()})
 			} else {
 				return opt.NewOptional[NodeExit](), errors.New("invalid expression")
+			}
+
+			if p.peek().HasValue() && p.peek().MustGetValue().tokenType == closeRoundBracket {
+				p.consume()
+			} else {
+				return opt.NewOptional[NodeExit](), errors.New("missing ')'")
 			}
 
 			if p.peek().HasValue() && p.peek().MustGetValue().tokenType == semiColon {
@@ -53,11 +64,18 @@ func (p *Parser) ParseExpr() opt.Optional[NodeExpr] {
 	return opt.Optional[NodeExpr]{}
 }
 
-func (p Parser) peek() opt.Optional[Token] {
-	if p.currentIndex >= len(p.tokens) {
+func (p Parser) peek(offset ...int) opt.Optional[Token] {
+	var offsetAmount int
+	if len(offset) == 1 {
+		offsetAmount = offset[0]
+	} else {
+		offsetAmount = 0
+	}
+
+	if p.currentIndex+offsetAmount >= len(p.tokens) {
 		return opt.NewOptional[Token]()
 	}
-	return opt.ToOptional(p.tokens[p.currentIndex])
+	return opt.ToOptional(p.tokens[p.currentIndex+offsetAmount])
 }
 
 func (p *Parser) consume() Token {

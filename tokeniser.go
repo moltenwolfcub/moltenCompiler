@@ -13,6 +13,8 @@ const (
 	exit TokenType = iota
 	intLiteral
 	semiColon
+	openRoundBracket
+	closeRoundBracket
 )
 
 type Token struct {
@@ -42,6 +44,14 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 		} else if t.peek().MustGetValue() == ';' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: semiColon})
+
+		} else if t.peek().MustGetValue() == '(' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: openRoundBracket})
+
+		} else if t.peek().MustGetValue() == ')' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: closeRoundBracket})
 
 		} else if unicode.IsLetter(t.peek().MustGetValue()) {
 			buf = append(buf, t.consume())
