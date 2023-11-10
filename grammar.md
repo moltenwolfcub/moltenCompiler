@@ -9,7 +9,10 @@ $$
 		\textcolor{yellow}{name}=[\textcolor{lime}{expr}];
 	\end{cases}
 	\\
-	[\textcolor{red}{expr}] &\to \text{intLiteral}
+	[\textcolor{red}{expr}] &\to \begin{cases}
+		\text{intLiteral}\\
+		\textcolor{yellow}{identifier}
+	\end{cases}
 
 \end{align}
 $$
