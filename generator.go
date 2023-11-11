@@ -49,8 +49,8 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 			panic(fmt.Errorf("identifier already used: %v", variableName))
 		}
 		g.variables[variableName] = Variable{stackLoc: g.stackSize}
-		output += "\tmov rbx, 0\n" //set a default starting value
-		output += g.push("rbx")
+		output += "\tmov rax, 0\n" //set a default starting value
+		output += g.push("rax")
 
 	case NodeStmtVarAssign:
 		// variableName := stmt.ident.value.MustGetValue()
