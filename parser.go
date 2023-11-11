@@ -47,10 +47,10 @@ func (p *Parser) ParseStmt() opt.Optional[NodeStmt] {
 
 		} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == closeRoundBracket {
 			node = NodeStmtExit{
-				expr: NodeExpr{NodeExprIntLiteral{intLiteral: Token{
+				expr: NodeExpr{NodeTerm{NodeTermIntLiteral{intLiteral: Token{
 					tokenType: intLiteral,
 					value:     opt.ToOptional("0"),
-				}}},
+				}}}},
 			}
 		} else {
 			panic(errors.New("invalid expression"))
@@ -113,14 +113,42 @@ func (p *Parser) ParseStmt() opt.Optional[NodeStmt] {
 	}
 }
 
-func (p *Parser) ParseExpr() opt.Optional[NodeExpr] {
+func (p *Parser) ParseTerm() opt.Optional[NodeTerm] {
 	if p.peek().HasValue() && p.peek().MustGetValue().tokenType == intLiteral {
-		return opt.ToOptional(NodeExpr{variant: NodeExprIntLiteral{intLiteral: p.consume()}})
+		return opt.ToOptional(NodeTerm{variant: NodeTermIntLiteral{intLiteral: p.consume()}})
 
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == identifier {
-		return opt.ToOptional(NodeExpr{variant: NodeExprIdentifier{identifier: p.consume()}})
+		return opt.ToOptional(NodeTerm{variant: NodeTermIdentifier{identifier: p.consume()}})
+
+	}
+	return opt.Optional[NodeTerm]{}
+}
+
+func (p *Parser) ParseExpr() opt.Optional[NodeExpr] {
+	if term := p.ParseTerm(); term.HasValue() {
+		if p.peek().HasValue() && p.peek().MustGetValue().tokenType == plus {
+			return opt.ToOptional(NodeExpr{variant: p.ParseBinExpr(term.MustGetValue()).MustGetValue()})
+		} else {
+			return opt.ToOptional(NodeExpr{variant: term.MustGetValue()})
+		}
 	}
 	return opt.Optional[NodeExpr]{}
+}
+
+func (p *Parser) ParseBinExpr(lhs NodeTerm) opt.Optional[NodeBinExpr] {
+	if p.peek().HasValue() && p.peek().MustGetValue().tokenType == plus {
+		node := NodeBinExprAdd{}
+		node.left = NodeExpr{variant: lhs}
+		p.consume()
+		if rhs := p.ParseExpr(); rhs.HasValue() {
+			node.right = rhs.MustGetValue()
+		} else {
+			panic(errors.New("expected expression"))
+		}
+		return opt.ToOptional(NodeBinExpr{variant: node})
+	} else {
+		panic(errors.New("unsupported binary operator"))
+	}
 }
 
 func (p Parser) peek(offset ...int) opt.Optional[Token] {
@@ -157,20 +185,20 @@ type NodeStmtExit struct {
 	expr NodeExpr
 }
 
-func (n NodeStmtExit) IsNodeStmt() {}
+func (NodeStmtExit) IsNodeStmt() {}
 
 type NodeStmtVarDeclare struct {
 	ident Token
 }
 
-func (n NodeStmtVarDeclare) IsNodeStmt() {}
+func (NodeStmtVarDeclare) IsNodeStmt() {}
 
 type NodeStmtVarAssign struct {
 	ident Token
 	expr  NodeExpr
 }
 
-func (n NodeStmtVarAssign) IsNodeStmt() {}
+func (NodeStmtVarAssign) IsNodeStmt() {}
 
 type NodeExpr struct {
 	variant interface {
@@ -178,14 +206,37 @@ type NodeExpr struct {
 	}
 }
 
-type NodeExprIntLiteral struct {
+type NodeBinExpr struct {
+	variant interface {
+		IsNodeBinExpr()
+	}
+}
+
+func (NodeBinExpr) IsNodeExpr() {}
+
+type NodeBinExprAdd struct {
+	left  NodeExpr
+	right NodeExpr
+}
+
+func (NodeBinExprAdd) IsNodeBinExpr() {}
+
+type NodeTerm struct {
+	variant interface {
+		IsNodeTerm()
+	}
+}
+
+func (NodeTerm) IsNodeExpr() {}
+
+type NodeTermIntLiteral struct {
 	intLiteral Token
 }
 
-func (n NodeExprIntLiteral) IsNodeExpr() {}
+func (n NodeTermIntLiteral) IsNodeTerm() {}
 
-type NodeExprIdentifier struct {
+type NodeTermIdentifier struct {
 	identifier Token
 }
 
-func (n NodeExprIdentifier) IsNodeExpr() {}
+func (NodeTermIdentifier) IsNodeTerm() {}

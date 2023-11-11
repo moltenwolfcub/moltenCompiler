@@ -73,11 +73,42 @@ func (g *Generator) GenExpr(rawExpr NodeExpr) string {
 	output := ""
 
 	switch expr := rawExpr.variant.(type) {
-	case NodeExprIntLiteral:
-		output += "\tmov rax, " + expr.intLiteral.value.MustGetValue() + "\n"
+	case NodeTerm:
+		output += g.GenTerm(expr)
+	case NodeBinExpr:
+		output += g.GenBinExpr(expr)
+	default:
+		panic(fmt.Errorf("generator error: don't know how to generate expression: %T", rawExpr.variant))
+	}
+	return output
+}
+
+func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) string {
+	output := ""
+	switch binExpr := rawBinExpr.variant.(type) {
+	case NodeBinExprAdd:
+		output += g.GenExpr(binExpr.left)
+		output += g.GenExpr(binExpr.right)
+		output += g.pop("rbx")
+		output += g.pop("rax")
+		output += "\tadd rax, rbx\n"
 		output += g.push("rax")
-	case NodeExprIdentifier:
-		variableName := expr.identifier.value.MustGetValue()
+	default:
+		panic(fmt.Errorf("generator error: don't know how to generate binary expression: %T", rawBinExpr.variant))
+	}
+	return output
+}
+
+func (g *Generator) GenTerm(rawTerm NodeTerm) string {
+	output := ""
+
+	switch term := rawTerm.variant.(type) {
+	case NodeTermIntLiteral:
+		output += "\tmov rax, " + term.intLiteral.value.MustGetValue() + "\n"
+		output += g.push("rax")
+
+	case NodeTermIdentifier:
+		variableName := term.identifier.value.MustGetValue()
 
 		variable, ok := g.variables[variableName]
 		if !ok {
@@ -85,8 +116,9 @@ func (g *Generator) GenExpr(rawExpr NodeExpr) string {
 		}
 
 		output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
+
 	default:
-		panic(fmt.Errorf("generator error: don't know how to generate expression: %T", rawExpr.variant))
+		panic(fmt.Errorf("generator error: don't know how to generate term: %T", rawTerm.variant))
 	}
 	return output
 }

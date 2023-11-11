@@ -10,9 +10,8 @@ $$
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}
-		\text{intLiteral}\\
-		\textcolor{yellow}{identifier}\\
-		[\textcolor{lime}{binExpr}]
+		[\textcolor{lime}{term}]\\
+		[\textcolor{lime}{binExpr}]\\
 	\end{cases}
 	\\
 	[\textcolor{red}{binExpr}] &\to \begin{cases}
@@ -20,6 +19,11 @@ $$
 		[\textcolor{lime}{expr}]/[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
 		[\textcolor{lime}{expr}]+[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\
 		[\textcolor{lime}{expr}]-[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\
+	\end{cases}
+	\\
+	[\textcolor{red}{term}] &\to \begin{cases}
+		\text{intLiteral}\\
+		\textcolor{yellow}{identifier}\\
 	\end{cases}
 
 \end{align}

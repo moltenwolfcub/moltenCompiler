@@ -5,10 +5,11 @@ _start:
 
 	mov rax, 15
 	push rax
+	mov rax, 1
+	push rax
+	pop rbx
 	pop rax
-	mov QWORD [rsp + 0], rax
-
-	mov rax, 10
+	add rax, rbx
 	push rax
 	pop rax
 	mov QWORD [rsp + 0], rax
@@ -16,16 +17,29 @@ _start:
 	mov rax, 0
 	push rax
 
-	mov rax, 3
+	push QWORD [rsp + 8]
+	mov rax, 4
+	push rax
+	mov rax, 9
+	push rax
+	pop rbx
+	pop rax
+	add rax, rbx
+	push rax
+	pop rbx
+	pop rax
+	add rax, rbx
 	push rax
 	pop rax
 	mov QWORD [rsp + 0], rax
 
 	push QWORD [rsp + 0]
+	mov rax, 1
+	push rax
+	pop rbx
 	pop rax
-	mov QWORD [rsp + 8], rax
-
-	push QWORD [rsp + 8]
+	add rax, rbx
+	push rax
 	mov rax, 60
 	pop rdi
 	syscall

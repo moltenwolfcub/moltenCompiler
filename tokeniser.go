@@ -18,6 +18,7 @@ const (
 	identifier
 	_var
 	equals
+	plus
 )
 
 type Token struct {
@@ -59,6 +60,10 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 		} else if t.peek().MustGetValue() == '=' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: equals})
+
+		} else if t.peek().MustGetValue() == '+' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: plus})
 
 		} else if unicode.IsLetter(t.peek().MustGetValue()) {
 			buf = append(buf, t.consume())
