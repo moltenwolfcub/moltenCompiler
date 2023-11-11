@@ -1,1 +1,3 @@
-exit(72);
+var x;
+
+exit(x);
