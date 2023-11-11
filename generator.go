@@ -53,9 +53,15 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 		output += g.push("rax")
 
 	case NodeStmtVarAssign:
-		// variableName := stmt.ident.value.MustGetValue()
+		variableName := stmt.ident.value.MustGetValue()
+		variable, ok := g.variables[variableName]
+		if !ok {
+			panic(fmt.Errorf("variables must be declared before assignment. '%s' is undefined", variableName))
+		}
 
-		// output += g.GenExpr(stmt.expr)
+		output += g.GenExpr(stmt.expr)
+		output += g.pop("rax")
+		output += fmt.Sprintf("\tmov QWORD [rsp + %v], rax\n", (g.stackSize-variable.stackLoc-1)*8)
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt.variant))
