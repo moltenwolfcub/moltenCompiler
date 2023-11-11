@@ -22,7 +22,7 @@ func (g *Generator) GenProg() string {
 	output := "global _start\n_start:\n"
 
 	for _, stmt := range g.program.stmts {
-		output += g.GenStmt(stmt)
+		output += g.GenStmt(stmt) + "\n"
 	}
 
 	//exit 0 at end of program if no explicit exit called
