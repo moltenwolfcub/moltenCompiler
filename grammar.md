@@ -6,12 +6,20 @@ $$
 	[\textcolor{red}{stmt}] &\to \begin{cases}
 		\textcolor{cyan}{exit}([\textcolor{lime}{expr}]);\\
 		\textcolor{cyan}{var}\space\textcolor{yellow}{name};\\
-		\textcolor{yellow}{name}=[\textcolor{lime}{expr}];
+		\textcolor{yellow}{name}=[\textcolor{lime}{expr}];\\
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}
 		\text{intLiteral}\\
-		\textcolor{yellow}{identifier}
+		\textcolor{yellow}{identifier}\\
+		[\textcolor{lime}{binExpr}]
+	\end{cases}
+	\\
+	[\textcolor{red}{binExpr}] &\to \begin{cases}
+		[\textcolor{lime}{expr}]*[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
+		[\textcolor{lime}{expr}]/[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
+		[\textcolor{lime}{expr}]+[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\
+		[\textcolor{lime}{expr}]-[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\
 	\end{cases}
 
 \end{align}
