@@ -15,6 +15,9 @@ const (
 	semiColon
 	openRoundBracket
 	closeRoundBracket
+	identifier
+	_var
+	equals
 )
 
 type Token struct {
@@ -53,6 +56,10 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: closeRoundBracket})
 
+		} else if t.peek().MustGetValue() == '=' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: equals})
+
 		} else if unicode.IsLetter(t.peek().MustGetValue()) {
 			buf = append(buf, t.consume())
 			for t.peek().HasValue() && (unicode.IsLetter(t.peek().MustGetValue()) || unicode.IsDigit(t.peek().MustGetValue())) {
@@ -62,8 +69,12 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 			if string(buf) == "exit" {
 				tokens = append(tokens, Token{tokenType: exit})
 				buf = []rune{}
+			} else if string(buf) == "var" {
+				tokens = append(tokens, Token{tokenType: _var})
+				buf = []rune{}
 			} else {
-				return nil, fmt.Errorf("unknown keyword: %s", string(buf))
+				tokens = append(tokens, Token{tokenType: identifier, value: opt.ToOptional(string(buf))})
+				buf = []rune{}
 			}
 
 		} else if unicode.IsDigit(t.peek().MustGetValue()) {

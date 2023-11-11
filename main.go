@@ -26,11 +26,7 @@ func main() {
 	}
 
 	parser := NewParser(tokens)
-	rootNode, err := parser.Parse()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	rootNode := parser.ParseProg()
 
 	root, err := rootNode.GetValue()
 	if err != nil {
@@ -38,7 +34,7 @@ func main() {
 		return
 	}
 	generator := NewGenerator(root)
-	asm := generator.Generate()
+	asm := generator.GenProg()
 
 	err = writeToFile(asm)
 	if err != nil {
