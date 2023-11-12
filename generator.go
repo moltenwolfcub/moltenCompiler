@@ -93,6 +93,13 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) string {
 		output += g.pop("rax")
 		output += "\tadd rax, rbx\n"
 		output += g.push("rax")
+	case NodeBinExprMultiply:
+		output += g.GenExpr(binExpr.left)
+		output += g.GenExpr(binExpr.right)
+		output += g.pop("rbx")
+		output += g.pop("rax")
+		output += "\tmul rbx\n"
+		output += g.push("rax")
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate binary expression: %T", rawBinExpr.variant))
 	}

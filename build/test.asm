@@ -20,11 +20,11 @@ _start:
 	push QWORD [rsp + 8]
 	mov rax, 4
 	push rax
-	mov rax, 9
-	push rax
 	pop rbx
 	pop rax
 	add rax, rbx
+	push rax
+	mov rax, 9
 	push rax
 	pop rbx
 	pop rax
@@ -34,7 +34,19 @@ _start:
 	mov QWORD [rsp + 0], rax
 
 	push QWORD [rsp + 0]
-	mov rax, 1
+	mov rax, 2
+	push rax
+	pop rbx
+	pop rax
+	mul rbx
+	push rax
+	mov rax, 2
+	push rax
+	mov rax, 3
+	push rax
+	pop rbx
+	pop rax
+	mul rbx
 	push rax
 	pop rbx
 	pop rax

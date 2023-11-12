@@ -91,30 +91,60 @@ func (p *Parser) ParseTerm() opt.Optional[NodeTerm] {
 	return opt.Optional[NodeTerm]{}
 }
 
-func (p *Parser) ParseExpr() opt.Optional[NodeExpr] {
-	if term := p.ParseTerm(); term.HasValue() {
-		if p.peek().HasValue() && p.peek().MustGetValue().tokenType == plus {
-			return opt.ToOptional(NodeExpr{p.ParseBinExpr(term.MustGetValue()).MustGetValue()})
-		} else {
-			return opt.ToOptional(NodeExpr{term.MustGetValue()})
-		}
-	}
-	return opt.Optional[NodeExpr]{}
-}
-
-func (p *Parser) ParseBinExpr(lhs NodeTerm) opt.Optional[NodeBinExpr] {
-	if p.tryConsume(plus).HasValue() {
-		node := NodeBinExprAdd{}
-		node.left = NodeExpr{lhs}
-		if rhs := p.ParseExpr(); rhs.HasValue() {
-			node.right = rhs.MustGetValue()
-		} else {
-			panic(errors.New("expected expression"))
-		}
-		return opt.ToOptional(NodeBinExpr{node})
+// based off of this principle and algorithm:
+// https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing
+func (p *Parser) ParseExpr(minPrecedence ...int) opt.Optional[NodeExpr] {
+	var minPrec int
+	if len(minPrecedence) == 1 {
+		minPrec = minPrecedence[0]
 	} else {
-		panic(errors.New("unsupported binary operator"))
+		minPrec = 0
 	}
+
+	lhsTerm := p.ParseTerm()
+	if !lhsTerm.HasValue() {
+		return opt.Optional[NodeExpr]{}
+	}
+
+	lhsExpr := NodeExpr{lhsTerm.MustGetValue()}
+
+	for {
+		currentToken := p.peek()
+		if !currentToken.HasValue() {
+			break
+		}
+		currentPrec := currentToken.MustGetValue().tokenType.GetBinPrec()
+		if !currentPrec.HasValue() || currentPrec.MustGetValue() < minPrec { //prolly meant to be <=
+			break
+		}
+		op := p.consume()
+
+		nextMinPrec := currentPrec.MustGetValue() + 1
+
+		rhsExpr := p.ParseExpr(nextMinPrec)
+		if !rhsExpr.HasValue() {
+			panic("Unable to parse expression")
+		}
+
+		expr := NodeBinExpr{}
+		switch op.tokenType {
+		case plus:
+			add := NodeBinExprAdd{
+				left:  lhsExpr,
+				right: rhsExpr.MustGetValue(),
+			}
+			expr.variant = add
+		case asterisk:
+			multiply := NodeBinExprMultiply{
+				left:  lhsExpr,
+				right: rhsExpr.MustGetValue(),
+			}
+			expr.variant = multiply
+		}
+		lhsExpr.variant = expr
+
+	}
+	return opt.ToOptional(lhsExpr)
 }
 
 func (p Parser) peek(offset ...int) opt.Optional[Token] {
@@ -201,6 +231,13 @@ type NodeBinExprAdd struct {
 }
 
 func (NodeBinExprAdd) IsNodeBinExpr() {}
+
+type NodeBinExprMultiply struct {
+	left  NodeExpr
+	right NodeExpr
+}
+
+func (NodeBinExprMultiply) IsNodeBinExpr() {}
 
 type NodeTerm struct {
 	variant interface {

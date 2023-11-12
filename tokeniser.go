@@ -19,7 +19,19 @@ const (
 	_var
 	equals
 	plus
+	asterisk
 )
+
+func (t TokenType) GetBinPrec() opt.Optional[int] {
+	switch t {
+	case plus:
+		return opt.ToOptional(0)
+	case asterisk:
+		return opt.ToOptional(1)
+	default:
+		return opt.Optional[int]{}
+	}
+}
 
 type Token struct {
 	tokenType TokenType
@@ -64,6 +76,10 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 		} else if t.peek().MustGetValue() == '+' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: plus})
+
+		} else if t.peek().MustGetValue() == '*' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: asterisk})
 
 		} else if unicode.IsLetter(t.peek().MustGetValue()) {
 			buf = append(buf, t.consume())
