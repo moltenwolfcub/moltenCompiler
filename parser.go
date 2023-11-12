@@ -140,6 +140,18 @@ func (p *Parser) ParseExpr(minPrecedence ...int) opt.Optional[NodeExpr] {
 				right: rhsExpr.MustGetValue(),
 			}
 			expr.variant = multiply
+		case minus:
+			subtract := NodeBinExprSubtract{
+				left:  lhsExpr,
+				right: rhsExpr.MustGetValue(),
+			}
+			expr.variant = subtract
+		case fslash:
+			divide := NodeBinExprDivide{
+				left:  lhsExpr,
+				right: rhsExpr.MustGetValue(),
+			}
+			expr.variant = divide
 		}
 		lhsExpr.variant = expr
 
@@ -232,12 +244,26 @@ type NodeBinExprAdd struct {
 
 func (NodeBinExprAdd) IsNodeBinExpr() {}
 
+type NodeBinExprSubtract struct {
+	left  NodeExpr
+	right NodeExpr
+}
+
+func (NodeBinExprSubtract) IsNodeBinExpr() {}
+
 type NodeBinExprMultiply struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
 func (NodeBinExprMultiply) IsNodeBinExpr() {}
+
+type NodeBinExprDivide struct {
+	left  NodeExpr
+	right NodeExpr
+}
+
+func (NodeBinExprDivide) IsNodeBinExpr() {}
 
 type NodeTerm struct {
 	variant interface {

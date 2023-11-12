@@ -20,13 +20,15 @@ const (
 	equals
 	plus
 	asterisk
+	minus
+	fslash
 )
 
 func (t TokenType) GetBinPrec() opt.Optional[int] {
 	switch t {
-	case plus:
+	case plus, minus:
 		return opt.ToOptional(0)
-	case asterisk:
+	case asterisk, fslash:
 		return opt.ToOptional(1)
 	default:
 		return opt.Optional[int]{}
@@ -80,6 +82,14 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 		} else if t.peek().MustGetValue() == '*' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: asterisk})
+
+		} else if t.peek().MustGetValue() == '-' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: minus})
+
+		} else if t.peek().MustGetValue() == '/' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: fslash})
 
 		} else if unicode.IsLetter(t.peek().MustGetValue()) {
 			buf = append(buf, t.consume())
