@@ -1,8 +1,8 @@
 var x;
 x = 14;
 var y;
-y = x + 4 * 9;
+y = x + 4 * 6+3;
 var z;
 z = y - 10;
 
-exit(z / 4 * 2);
+exit(z / 4 * (2 + 4));

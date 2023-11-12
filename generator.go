@@ -138,6 +138,8 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) string {
 
 		output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
 
+	case NodeTermRoundBracketExpr:
+		output += g.GenExpr(term.expr)
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate term: %T", rawTerm.variant))
 	}

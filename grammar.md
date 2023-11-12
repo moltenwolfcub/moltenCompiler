@@ -24,6 +24,7 @@ $$
 	[\textcolor{red}{term}] &\to \begin{cases}
 		\text{intLiteral}\\
 		\textcolor{yellow}{identifier}\\
+		([\textcolor{lime}{expr}])\\
 	\end{cases}
 
 \end{align}

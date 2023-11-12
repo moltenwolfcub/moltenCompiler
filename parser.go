@@ -84,9 +84,15 @@ func (p *Parser) ParseStmt() opt.Optional[NodeStmt] {
 func (p *Parser) ParseTerm() opt.Optional[NodeTerm] {
 	if tok := p.tryConsume(intLiteral); tok.HasValue() {
 		return opt.ToOptional(NodeTerm{NodeTermIntLiteral{tok.MustGetValue()}})
-	}
-	if tok := p.tryConsume(identifier); tok.HasValue() {
+	} else if tok := p.tryConsume(identifier); tok.HasValue() {
 		return opt.ToOptional(NodeTerm{NodeTermIdentifier{tok.MustGetValue()}})
+	} else if p.tryConsume(openRoundBracket).HasValue() {
+		expr := p.ParseExpr()
+		if !expr.HasValue() {
+			panic(errors.New("expected expression"))
+		}
+		p.mustTryConsume(closeRoundBracket, "expected ')'")
+		return opt.ToOptional(NodeTerm{NodeTermRoundBracketExpr{expr.MustGetValue()}})
 	}
 	return opt.Optional[NodeTerm]{}
 }
@@ -123,7 +129,7 @@ func (p *Parser) ParseExpr(minPrecedence ...int) opt.Optional[NodeExpr] {
 
 		rhsExpr := p.ParseExpr(nextMinPrec)
 		if !rhsExpr.HasValue() {
-			panic("Unable to parse expression")
+			panic(errors.New("unable to parse expression"))
 		}
 
 		expr := NodeBinExpr{}
@@ -284,3 +290,9 @@ type NodeTermIdentifier struct {
 }
 
 func (NodeTermIdentifier) IsNodeTerm() {}
+
+type NodeTermRoundBracketExpr struct {
+	expr NodeExpr
+}
+
+func (NodeTermRoundBracketExpr) IsNodeTerm() {}
