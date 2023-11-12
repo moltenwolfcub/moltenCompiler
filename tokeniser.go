@@ -91,9 +91,9 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: fslash})
 
-		} else if unicode.IsLetter(t.peek().MustGetValue()) {
+		} else if unicode.IsLetter(t.peek().MustGetValue()) || t.peek().MustGetValue() == '$' || t.peek().MustGetValue() == '_' {
 			buf = append(buf, t.consume())
-			for t.peek().HasValue() && (unicode.IsLetter(t.peek().MustGetValue()) || unicode.IsDigit(t.peek().MustGetValue())) {
+			for t.peek().HasValue() && (unicode.IsLetter(t.peek().MustGetValue()) || unicode.IsDigit(t.peek().MustGetValue()) || t.peek().MustGetValue() == '$' || t.peek().MustGetValue() == '_') {
 				buf = append(buf, t.consume())
 			}
 
