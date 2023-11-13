@@ -5,4 +5,6 @@ y$2 = x_1 + 4 * 6+3;
 var _z;
 _z = y$2 - 10;
 
+// very useful comment
+
 exit(_z / 4 * (2 + 4));

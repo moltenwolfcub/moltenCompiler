@@ -89,7 +89,14 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 
 		} else if t.peek().MustGetValue() == '/' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: fslash})
+			if t.peek().HasValue() && t.peek().MustGetValue() == '/' {
+				t.consume()
+				for t.peek().HasValue() && t.peek().MustGetValue() != '\n' {
+					t.consume()
+				}
+			} else {
+				tokens = append(tokens, Token{tokenType: fslash})
+			}
 
 		} else if unicode.IsLetter(t.peek().MustGetValue()) || t.peek().MustGetValue() == '$' || t.peek().MustGetValue() == '_' {
 			buf = append(buf, t.consume())
