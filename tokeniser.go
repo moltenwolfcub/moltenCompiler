@@ -23,6 +23,8 @@ const (
 	asterisk
 	minus
 	fslash
+	openCurlyBracket
+	closeCurlyBracket
 )
 
 func (t TokenType) GetBinPrec() opt.Optional[int] {
@@ -71,6 +73,14 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 		} else if t.peek().MustGetValue() == ')' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: closeRoundBracket})
+
+		} else if t.peek().MustGetValue() == '{' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: openCurlyBracket})
+
+		} else if t.peek().MustGetValue() == '}' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: closeCurlyBracket})
 
 		} else if t.peek().MustGetValue() == '=' {
 			t.consume()

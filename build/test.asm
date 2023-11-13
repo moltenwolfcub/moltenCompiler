@@ -35,6 +35,38 @@ _start:
 
 	mov rax, 0
 	push rax
+	mov rax, 6
+	push rax
+	pop rax
+	mov QWORD [rsp + 0], rax
+	mov rax, 0
+	push rax
+	mov rax, 7
+	push rax
+	pop rax
+	mov QWORD [rsp + 0], rax
+	mov rax, 2
+	push rax
+	push QWORD [rsp + 8]
+	pop rbx
+	pop rax
+	add rax, rbx
+	push rax
+	pop rax
+	mov QWORD [rsp + 8], rax
+	add rsp, 8
+	push QWORD [rsp + 8]
+	push QWORD [rsp + 8]
+	pop rbx
+	pop rax
+	add rax, rbx
+	push rax
+	pop rax
+	mov QWORD [rsp + 8], rax
+	add rsp, 8
+
+	mov rax, 0
+	push rax
 
 	push QWORD [rsp + 8]
 	mov rax, 10

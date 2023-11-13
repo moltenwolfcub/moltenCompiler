@@ -1,13 +1,25 @@
 var x_1;
 x_1 = 14;
 var y$2;
-y$2 = x_1 + 4 * 6+3;
+y$2 = x_1 + 4 * 6+3; //41
+
+{
+	var number;
+	number = 6;
+	{
+		var number2;
+		number2 = 7;
+		number = 2 + number2; //9
+	}
+	y$2 = y$2 + number; //50
+}
+
 var _z;
-_z = y$2 - 10;
+_z = y$2 - 10; //40
 
 // very useful comment
 
-exit(_z / 4 * (2 + 4));
+exit(_z / 4 * (2 + 4)); //60
 
 /* bigger comment 
 multiple lines are supported!

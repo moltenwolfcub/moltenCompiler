@@ -76,6 +76,19 @@ func (p *Parser) ParseStmt() opt.Optional[NodeStmt] {
 		p.mustTryConsume(semiColon, "missing ';'")
 
 		return opt.ToOptional(NodeStmt{node})
+	} else if tok := p.tryConsume(openCurlyBracket); tok.HasValue() {
+		var scope NodeStmtScope
+		for {
+			stmt := p.ParseStmt()
+			if !stmt.HasValue() {
+				break
+			}
+
+			scope.stmts = append(scope.stmts, stmt.MustGetValue())
+		}
+		p.mustTryConsume(closeCurlyBracket, "expected '}'")
+		return opt.ToOptional(NodeStmt{scope})
+
 	} else {
 		return opt.Optional[NodeStmt]{}
 	}
@@ -228,6 +241,12 @@ type NodeStmtVarAssign struct {
 }
 
 func (NodeStmtVarAssign) IsNodeStmt() {}
+
+type NodeStmtScope struct {
+	stmts []NodeStmt
+}
+
+func (NodeStmtScope) IsNodeStmt() {}
 
 type NodeExpr struct {
 	variant interface {

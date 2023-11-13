@@ -7,6 +7,7 @@ $$
 		\textcolor{cyan}{exit}([\textcolor{lime}{expr}]);\\
 		\textcolor{cyan}{var}\space\textcolor{yellow}{name};\\
 		\textcolor{yellow}{name}=[\textcolor{lime}{expr}];\\
+		\{[\textcolor{lime}{stmt}]^*\}\\
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}

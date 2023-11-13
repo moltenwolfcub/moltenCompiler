@@ -7,14 +7,16 @@ import (
 type Generator struct {
 	program   NodeProg
 	stackSize uint
-	variables map[string]Variable
+	variables []Variable
+	scopes    []int
 }
 
 func NewGenerator(prog NodeProg) Generator {
 	return Generator{
 		program:   prog,
 		stackSize: 0,
-		variables: map[string]Variable{},
+		variables: []Variable{},
+		scopes:    []int{},
 	}
 }
 
@@ -45,23 +47,46 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 	case NodeStmtVarDeclare:
 		variableName := stmt.ident.value.MustGetValue()
 
-		if _, ok := g.variables[variableName]; ok {
+		exists := false
+		for _, v := range g.variables {
+			if v.name == variableName {
+				exists = true
+			}
+		}
+
+		if exists {
 			panic(fmt.Errorf("identifier already used: %v", variableName))
 		}
-		g.variables[variableName] = Variable{stackLoc: g.stackSize}
+		g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: variableName})
 		output += "\tmov rax, 0\n" //set a default starting value
 		output += g.push("rax")
 
 	case NodeStmtVarAssign:
 		variableName := stmt.ident.value.MustGetValue()
-		variable, ok := g.variables[variableName]
-		if !ok {
+		var variable Variable
+		exists := false
+		for _, v := range g.variables {
+			if v.name == variableName {
+				variable = v
+				exists = true
+			}
+		}
+		if !exists {
 			panic(fmt.Errorf("variables must be declared before assignment. '%s' is undefined", variableName))
 		}
 
 		output += g.GenExpr(stmt.expr)
 		output += g.pop("rax")
 		output += fmt.Sprintf("\tmov QWORD [rsp + %v], rax\n", (g.stackSize-variable.stackLoc-1)*8)
+
+	case NodeStmtScope:
+		output += g.beginScope()
+
+		for _, stmt := range stmt.stmts {
+			output += g.GenStmt(stmt)
+		}
+
+		output += g.endScope()
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt.variant))
@@ -131,8 +156,16 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) string {
 	case NodeTermIdentifier:
 		variableName := term.identifier.value.MustGetValue()
 
-		variable, ok := g.variables[variableName]
-		if !ok {
+		var variable Variable
+		exists := false
+		for _, v := range g.variables {
+			if v.name == variableName {
+				variable = v
+				exists = true
+			}
+		}
+
+		if !exists {
 			panic(fmt.Errorf("unknown identifier: %v", variableName))
 		}
 
@@ -155,6 +188,21 @@ func (g *Generator) pop(reg string) string {
 	return "\tpop " + reg + "\n"
 }
 
+func (g *Generator) beginScope() string {
+	g.scopes = append(g.scopes, len(g.variables))
+	return ""
+}
+func (g *Generator) endScope() string {
+	popCount := len(g.variables) - g.scopes[len(g.scopes)-1]
+
+	g.stackSize -= uint(popCount)
+	g.variables = g.variables[0 : len(g.variables)-popCount]
+	g.scopes = g.scopes[0 : len(g.scopes)-1]
+
+	return "\tadd rsp, " + fmt.Sprintf("%d", popCount*8) + "\n"
+}
+
 type Variable struct {
+	name     string
 	stackLoc uint
 }
