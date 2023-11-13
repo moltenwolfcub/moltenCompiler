@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"unicode"
 
@@ -94,6 +95,20 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 				for t.peek().HasValue() && t.peek().MustGetValue() != '\n' {
 					t.consume()
 				}
+			} else if t.peek().HasValue() && t.peek().MustGetValue() == '*' {
+				t.consume()
+				for {
+					if !t.peek().HasValue() {
+						panic(errors.New("multiline comment didn't have an end. terminate it with `*/`"))
+					}
+
+					c := t.consume()
+					if c == '*' && t.peek().HasValue() && t.peek().MustGetValue() == '/' {
+						t.consume()
+						break
+					}
+				}
+
 			} else {
 				tokens = append(tokens, Token{tokenType: fslash})
 			}
