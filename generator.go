@@ -79,7 +79,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 		output += g.pop("rax")
 		output += fmt.Sprintf("\tmov QWORD [rsp + %v], rax\n", (g.stackSize-variable.stackLoc-1)*8)
 
-	case NodeStmtScope:
+	case NodeScope: //needs to be extracted to separate method
 		output += g.beginScope()
 
 		for _, stmt := range stmt.stmts {

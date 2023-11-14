@@ -76,8 +76,8 @@ func (p *Parser) ParseStmt() opt.Optional[NodeStmt] {
 		p.mustTryConsume(semiColon, "missing ';'")
 
 		return opt.ToOptional(NodeStmt{node})
-	} else if tok := p.tryConsume(openCurlyBracket); tok.HasValue() {
-		var scope NodeStmtScope
+	} else if tok := p.tryConsume(openCurlyBracket); tok.HasValue() { //needs to be extracted to separate method
+		var scope NodeScope
 		for {
 			stmt := p.ParseStmt()
 			if !stmt.HasValue() {
@@ -242,12 +242,6 @@ type NodeStmtVarAssign struct {
 
 func (NodeStmtVarAssign) IsNodeStmt() {}
 
-type NodeStmtScope struct {
-	stmts []NodeStmt
-}
-
-func (NodeStmtScope) IsNodeStmt() {}
-
 type NodeExpr struct {
 	variant interface {
 		IsNodeExpr()
@@ -315,3 +309,9 @@ type NodeTermRoundBracketExpr struct {
 }
 
 func (NodeTermRoundBracketExpr) IsNodeTerm() {}
+
+type NodeScope struct {
+	stmts []NodeStmt
+}
+
+func (NodeScope) IsNodeStmt() {}
