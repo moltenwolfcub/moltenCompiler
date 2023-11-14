@@ -19,6 +19,13 @@ _z = y$2 - 10; //40
 
 // very useful comment
 
+var v;
+v = 5;
+
+if (v) {
+	exit(3);
+}
+
 exit(_z / 4 * (2 + 4)); //60
 
 /* bigger comment 

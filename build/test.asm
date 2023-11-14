@@ -78,7 +78,27 @@ _start:
 	pop rax
 	mov QWORD [rsp + 0], rax
 
+	mov rax, 0
+	push rax
+
+	mov rax, 5
+	push rax
+	pop rax
+	mov QWORD [rsp + 0], rax
+
 	push QWORD [rsp + 0]
+	pop rax
+	test rax, rax
+	jz label1_if
+	mov rax, 3
+	push rax
+	mov rax, 60
+	pop rdi
+	syscall
+	add rsp, 0
+label1_if:
+
+	push QWORD [rsp + 8]
 	mov rax, 4
 	push rax
 	pop rbx

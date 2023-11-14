@@ -5,18 +5,20 @@ import (
 )
 
 type Generator struct {
-	program   NodeProg
-	stackSize uint
-	variables []Variable
-	scopes    []int
+	program    NodeProg
+	stackSize  uint
+	variables  []Variable
+	scopes     []int
+	labelCount int
 }
 
 func NewGenerator(prog NodeProg) Generator {
 	return Generator{
-		program:   prog,
-		stackSize: 0,
-		variables: []Variable{},
-		scopes:    []int{},
+		program:    prog,
+		stackSize:  0,
+		variables:  []Variable{},
+		scopes:     []int{},
+		labelCount: 0,
 	}
 }
 
@@ -79,14 +81,17 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 		output += g.pop("rax")
 		output += fmt.Sprintf("\tmov QWORD [rsp + %v], rax\n", (g.stackSize-variable.stackLoc-1)*8)
 
-	case NodeScope: //needs to be extracted to separate method
-		output += g.beginScope()
+	case NodeScope:
+		output += g.GenScope(stmt)
+	case NodeStmtIf:
+		output += g.GenExpr(stmt.expr)
+		output += g.pop("rax")
 
-		for _, stmt := range stmt.stmts {
-			output += g.GenStmt(stmt)
-		}
-
-		output += g.endScope()
+		label := g.createLabel("if")
+		output += "\ttest rax, rax\n"
+		output += "\tjz " + label + "\n"
+		output += g.GenScope(stmt.scope)
+		output += label + ":\n"
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt.variant))
@@ -179,6 +184,20 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) string {
 	return output
 }
 
+func (g *Generator) GenScope(scope NodeScope) string {
+	output := ""
+
+	output += g.beginScope()
+
+	for _, stmt := range scope.stmts {
+		output += g.GenStmt(stmt)
+	}
+
+	output += g.endScope()
+
+	return output
+}
+
 func (g *Generator) push(reg string) string {
 	g.stackSize++
 	return "\tpush " + reg + "\n"
@@ -200,6 +219,18 @@ func (g *Generator) endScope() string {
 	g.scopes = g.scopes[0 : len(g.scopes)-1]
 
 	return "\tadd rsp, " + fmt.Sprintf("%d", popCount*8) + "\n"
+}
+
+func (g *Generator) createLabel(labelCtx ...string) string {
+	var suffix string
+	if len(labelCtx) == 1 {
+		suffix = "_" + labelCtx[0]
+	} else {
+		suffix = ""
+	}
+
+	g.labelCount++
+	return fmt.Sprintf("label%d%s", g.labelCount, suffix)
 }
 
 type Variable struct {

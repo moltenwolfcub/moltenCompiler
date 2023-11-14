@@ -76,18 +76,32 @@ func (p *Parser) ParseStmt() opt.Optional[NodeStmt] {
 		p.mustTryConsume(semiColon, "missing ';'")
 
 		return opt.ToOptional(NodeStmt{node})
-	} else if tok := p.tryConsume(openCurlyBracket); tok.HasValue() { //needs to be extracted to separate method
-		var scope NodeScope
-		for {
-			stmt := p.ParseStmt()
-			if !stmt.HasValue() {
-				break
-			}
-
-			scope.stmts = append(scope.stmts, stmt.MustGetValue())
+	} else if p.peek().MustGetValue().tokenType == openCurlyBracket {
+		scope := p.ParseScope()
+		if !scope.HasValue() {
+			panic(errors.New("invalid scope"))
 		}
-		p.mustTryConsume(closeCurlyBracket, "expected '}'")
-		return opt.ToOptional(NodeStmt{scope})
+		return opt.ToOptional(NodeStmt{scope.MustGetValue()})
+
+	} else if tok := p.tryConsume(_if); tok.HasValue() {
+		node := NodeStmtIf{}
+
+		p.mustTryConsume(openRoundBracket, "Expected '('")
+
+		if expr := p.ParseExpr(); expr.HasValue() {
+			node.expr = expr.MustGetValue()
+		} else {
+			panic(errors.New("invalid expression"))
+		}
+
+		p.mustTryConsume(closeRoundBracket, "Expected ')'")
+
+		if scope := p.ParseScope(); scope.HasValue() {
+			node.scope = scope.MustGetValue()
+		} else {
+			panic(errors.New("invalid if statement, expected scope"))
+		}
+		return opt.ToOptional(NodeStmt{node})
 
 	} else {
 		return opt.Optional[NodeStmt]{}
@@ -108,6 +122,24 @@ func (p *Parser) ParseTerm() opt.Optional[NodeTerm] {
 		return opt.ToOptional(NodeTerm{NodeTermRoundBracketExpr{expr.MustGetValue()}})
 	}
 	return opt.Optional[NodeTerm]{}
+}
+
+func (p *Parser) ParseScope() opt.Optional[NodeScope] {
+	if !p.tryConsume(openCurlyBracket).HasValue() {
+		return opt.Optional[NodeScope]{}
+	}
+
+	var scope NodeScope
+	for {
+		stmt := p.ParseStmt()
+		if !stmt.HasValue() {
+			break
+		}
+
+		scope.stmts = append(scope.stmts, stmt.MustGetValue())
+	}
+	p.mustTryConsume(closeCurlyBracket, "expected '}'")
+	return opt.ToOptional(scope)
 }
 
 // based off of this principle and algorithm:
@@ -241,6 +273,13 @@ type NodeStmtVarAssign struct {
 }
 
 func (NodeStmtVarAssign) IsNodeStmt() {}
+
+type NodeStmtIf struct {
+	expr  NodeExpr
+	scope NodeScope
+}
+
+func (NodeStmtIf) IsNodeStmt() {}
 
 type NodeExpr struct {
 	variant interface {
