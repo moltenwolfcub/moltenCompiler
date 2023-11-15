@@ -9,6 +9,7 @@ $$
 		\textcolor{yellow}{name}=[\textcolor{lime}{expr}];\\
 		[\textcolor{lime}{scope}]\\
 		\textcolor{cyan}{if}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
+		\textcolor{cyan}{while}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}

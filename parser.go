@@ -103,6 +103,26 @@ func (p *Parser) ParseStmt() opt.Optional[NodeStmt] {
 		}
 		return opt.ToOptional(NodeStmt{node})
 
+	} else if tok := p.tryConsume(while); tok.HasValue() {
+		node := NodeStmtWhile{}
+
+		p.mustTryConsume(openRoundBracket, "Expected '('")
+
+		if expr := p.ParseExpr(); expr.HasValue() {
+			node.expr = expr.MustGetValue()
+		} else {
+			panic(errors.New("invalid expression"))
+		}
+
+		p.mustTryConsume(closeRoundBracket, "Expected ')'")
+
+		if scope := p.ParseScope(); scope.HasValue() {
+			node.scope = scope.MustGetValue()
+		} else {
+			panic(errors.New("invalid if statement, expected scope"))
+		}
+		return opt.ToOptional(NodeStmt{node})
+
 	} else {
 		return opt.Optional[NodeStmt]{}
 	}
@@ -280,6 +300,13 @@ type NodeStmtIf struct {
 }
 
 func (NodeStmtIf) IsNodeStmt() {}
+
+type NodeStmtWhile struct {
+	expr  NodeExpr
+	scope NodeScope
+}
+
+func (NodeStmtWhile) IsNodeStmt() {}
 
 type NodeExpr struct {
 	variant interface {

@@ -26,6 +26,7 @@ const (
 	openCurlyBracket
 	closeCurlyBracket
 	_if
+	while
 )
 
 func (t TokenType) GetBinPrec() opt.Optional[int] {
@@ -138,6 +139,9 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 				buf = []rune{}
 			} else if string(buf) == "if" {
 				tokens = append(tokens, Token{tokenType: _if})
+				buf = []rune{}
+			} else if string(buf) == "while" {
+				tokens = append(tokens, Token{tokenType: while})
 				buf = []rune{}
 			} else {
 				tokens = append(tokens, Token{tokenType: identifier, value: opt.ToOptional(string(buf))})

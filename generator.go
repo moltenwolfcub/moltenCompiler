@@ -93,6 +93,24 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 		output += g.GenScope(stmt.scope)
 		output += label + ":\n"
 
+	case NodeStmtWhile:
+		startLabel := g.createLabel("startWhile")
+		endLabel := g.createLabel("endWhile")
+
+		output += startLabel + ":\n"
+
+		output += g.GenExpr(stmt.expr)
+		output += g.pop("rax")
+
+		output += "\ttest rax, rax\n"
+		output += "\tjz " + endLabel + "\n"
+
+		output += g.GenScope(stmt.scope)
+
+		output += "\tjmp " + startLabel + "\n"
+
+		output += endLabel + ":\n"
+
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt.variant))
 	}
