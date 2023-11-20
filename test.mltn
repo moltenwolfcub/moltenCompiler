@@ -28,9 +28,11 @@ while (v-1) {
 
 if (v-1) {
 	exit(3);
+} else if (0) {
+	exit(4);
+} else {
+	exit(_z / 4 * (2 + 4)); //60
 }
-
-exit(_z / 4 * (2 + 4)); //60
 
 /* bigger comment 
 multiple lines are supported!

@@ -8,7 +8,7 @@ $$
 		\textcolor{cyan}{var}\space\textcolor{yellow}{name};\\
 		\textcolor{yellow}{name}=[\textcolor{lime}{expr}];\\
 		[\textcolor{lime}{scope}]\\
-		\textcolor{cyan}{if}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
+		[\textcolor{lime}{if}]\\
 		\textcolor{cyan}{while}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
 	\end{cases}
 	\\
@@ -31,6 +31,12 @@ $$
 	\end{cases}
 	\\
 	[\textcolor{red}{scope}] &\to \{[\textcolor{lime}{stmt}]^*\}
+	\\
+	[\textcolor{red}{if}] &\to \textcolor{cyan}{if}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]<\textcolor{cyan}{else}\space[\textcolor{lime}{else}]>\\
+	[\textcolor{red}{else}] &\to \begin{cases}
+		[\textcolor{lime}{if}]\\
+		[\textcolor{lime}{scope}]\\
+	\end{cases}
 
 \end{align}
 $$

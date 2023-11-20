@@ -84,14 +84,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 	case NodeScope:
 		output += g.GenScope(stmt)
 	case NodeStmtIf:
-		output += g.GenExpr(stmt.expr)
-		output += g.pop("rax")
-
-		label := g.createLabel("if")
-		output += "\ttest rax, rax\n"
-		output += "\tjz " + label + "\n"
-		output += g.GenScope(stmt.scope)
-		output += label + ":\n"
+		output += g.GenIf(stmt)
 
 	case NodeStmtWhile:
 		startLabel := g.createLabel("startWhile")
@@ -214,6 +207,40 @@ func (g *Generator) GenScope(scope NodeScope) string {
 	output += g.endScope()
 
 	return output
+}
+
+func (g *Generator) GenIf(_if NodeStmtIf) string {
+	output := ""
+
+	output += g.GenExpr(_if.expr)
+	output += g.pop("rax")
+
+	label := g.createLabel("else")
+	output += "\ttest rax, rax\n"
+	output += "\tjz " + label + "\n"
+	output += g.GenScope(_if.scope)
+	output += label + ":\n"
+
+	if _if.elseBranch.HasValue() {
+		output += g.GenElse(_if.elseBranch.MustGetValue())
+	}
+
+	return output
+}
+
+func (g *Generator) GenElse(rawElse NodeElse) string {
+	output := ""
+
+	switch _else := rawElse.variant.(type) {
+	case NodeElseScope:
+		output += g.GenScope(_else.scope)
+	case NodeElseElif:
+		output += g.GenIf(_else.ifStmt)
+	default:
+		panic(fmt.Errorf("generator error: don't know how to generate else branch: %T", rawElse.variant))
+	}
+	return output
+
 }
 
 func (g *Generator) push(reg string) string {

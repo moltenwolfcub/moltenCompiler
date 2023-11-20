@@ -119,15 +119,26 @@ label2_endWhile:
 	push rax
 	pop rax
 	test rax, rax
-	jz label3_if
+	jz label3_else
 	mov rax, 3
 	push rax
 	mov rax, 60
 	pop rdi
 	syscall
 	add rsp, 0
-label3_if:
-
+label3_else:
+	mov rax, 0
+	push rax
+	pop rax
+	test rax, rax
+	jz label4_else
+	mov rax, 4
+	push rax
+	mov rax, 60
+	pop rdi
+	syscall
+	add rsp, 0
+label4_else:
 	push QWORD [rsp + 8]
 	mov rax, 4
 	push rax
@@ -150,6 +161,7 @@ label3_if:
 	mov rax, 60
 	pop rdi
 	syscall
+	add rsp, 0
 
 	mov rax, 60
 	mov rdi, 0

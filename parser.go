@@ -83,25 +83,12 @@ func (p *Parser) ParseStmt() opt.Optional[NodeStmt] {
 		}
 		return opt.ToOptional(NodeStmt{scope.MustGetValue()})
 
-	} else if tok := p.tryConsume(_if); tok.HasValue() {
-		node := NodeStmtIf{}
-
-		p.mustTryConsume(openRoundBracket, "Expected '('")
-
-		if expr := p.ParseExpr(); expr.HasValue() {
-			node.expr = expr.MustGetValue()
-		} else {
-			panic(errors.New("invalid expression"))
+	} else if p.peek().MustGetValue().tokenType == _if {
+		ifStmt := p.ParseIf()
+		if !ifStmt.HasValue() {
+			panic(errors.New("invalid if statement"))
 		}
-
-		p.mustTryConsume(closeRoundBracket, "Expected ')'")
-
-		if scope := p.ParseScope(); scope.HasValue() {
-			node.scope = scope.MustGetValue()
-		} else {
-			panic(errors.New("invalid if statement, expected scope"))
-		}
-		return opt.ToOptional(NodeStmt{node})
+		return opt.ToOptional(NodeStmt{ifStmt.MustGetValue()})
 
 	} else if tok := p.tryConsume(while); tok.HasValue() {
 		node := NodeStmtWhile{}
@@ -160,6 +147,50 @@ func (p *Parser) ParseScope() opt.Optional[NodeScope] {
 	}
 	p.mustTryConsume(closeCurlyBracket, "expected '}'")
 	return opt.ToOptional(scope)
+}
+
+func (p *Parser) ParseIf() opt.Optional[NodeStmtIf] {
+	if !p.tryConsume(_if).HasValue() {
+		return opt.Optional[NodeStmtIf]{}
+	}
+
+	node := NodeStmtIf{}
+
+	p.mustTryConsume(openRoundBracket, "Expected '('")
+	if expr := p.ParseExpr(); expr.HasValue() {
+		node.expr = expr.MustGetValue()
+	} else {
+		panic(errors.New("invalid expression"))
+	}
+	p.mustTryConsume(closeRoundBracket, "Expected ')'")
+
+	if scope := p.ParseScope(); scope.HasValue() {
+		node.scope = scope.MustGetValue()
+	} else {
+		panic(errors.New("invalid if statement, expected scope"))
+	}
+
+	if p.tryConsume(_else).HasValue() {
+		node.elseBranch = p.ParseElse()
+	}
+
+	return opt.ToOptional(node)
+}
+
+func (p *Parser) ParseElse() opt.Optional[NodeElse] {
+	node := NodeElse{}
+
+	if ifStmt := p.ParseIf(); ifStmt.HasValue() {
+		elifNode := NodeElseElif{ifStmt.MustGetValue()}
+		node.variant = elifNode
+		return opt.ToOptional(node)
+	} else if scope := p.ParseScope(); scope.HasValue() {
+		scopeNode := NodeElseScope{scope.MustGetValue()}
+		node.variant = scopeNode
+		return opt.ToOptional(node)
+	} else {
+		return opt.Optional[NodeElse]{}
+	}
 }
 
 // based off of this principle and algorithm:
@@ -295,8 +326,9 @@ type NodeStmtVarAssign struct {
 func (NodeStmtVarAssign) IsNodeStmt() {}
 
 type NodeStmtIf struct {
-	expr  NodeExpr
-	scope NodeScope
+	expr       NodeExpr
+	scope      NodeScope
+	elseBranch opt.Optional[NodeElse]
 }
 
 func (NodeStmtIf) IsNodeStmt() {}
@@ -381,3 +413,21 @@ type NodeScope struct {
 }
 
 func (NodeScope) IsNodeStmt() {}
+
+type NodeElse struct {
+	variant interface {
+		IsNodeElif()
+	}
+}
+
+type NodeElseElif struct {
+	ifStmt NodeStmtIf
+}
+
+func (NodeElseElif) IsNodeElif() {}
+
+type NodeElseScope struct {
+	scope NodeScope
+}
+
+func (NodeElseScope) IsNodeElif() {}
