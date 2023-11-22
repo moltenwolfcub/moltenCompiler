@@ -28,6 +28,8 @@ const (
 	_if
 	while
 	_else
+	_break
+	_continue
 )
 
 func (t TokenType) GetBinPrec() opt.Optional[int] {
@@ -146,6 +148,12 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 				buf = []rune{}
 			} else if string(buf) == "else" {
 				tokens = append(tokens, Token{tokenType: _else})
+				buf = []rune{}
+			} else if string(buf) == "break" {
+				tokens = append(tokens, Token{tokenType: _break})
+				buf = []rune{}
+			} else if string(buf) == "continue" {
+				tokens = append(tokens, Token{tokenType: _continue})
 				buf = []rune{}
 			} else {
 				tokens = append(tokens, Token{tokenType: identifier, value: opt.ToOptional(string(buf))})

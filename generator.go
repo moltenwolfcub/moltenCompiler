@@ -5,20 +5,24 @@ import (
 )
 
 type Generator struct {
-	program    NodeProg
-	stackSize  uint
-	variables  []Variable
-	scopes     []int
-	labelCount int
+	program       NodeProg
+	stackSize     uint
+	variables     []Variable
+	scopes        []int
+	labelCount    int
+	breakLabel    string
+	continueLabel string
 }
 
 func NewGenerator(prog NodeProg) Generator {
 	return Generator{
-		program:    prog,
-		stackSize:  0,
-		variables:  []Variable{},
-		scopes:     []int{},
-		labelCount: 0,
+		program:       prog,
+		stackSize:     0,
+		variables:     []Variable{},
+		scopes:        []int{},
+		labelCount:    0,
+		breakLabel:    "nil",
+		continueLabel: "nil",
 	}
 }
 
@@ -90,6 +94,9 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 		startLabel := g.createLabel("startWhile")
 		endLabel := g.createLabel("endWhile")
 
+		g.breakLabel = endLabel
+		g.continueLabel = startLabel
+
 		output += startLabel + ":\n"
 
 		output += g.GenExpr(stmt.expr)
@@ -103,6 +110,21 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 		output += "\tjmp " + startLabel + "\n"
 
 		output += endLabel + ":\n"
+
+		g.breakLabel = "nil"
+		g.continueLabel = "nil"
+
+	case NodeStmtBreak:
+		if g.breakLabel == "nil" {
+			panic(fmt.Errorf("can't break when not in a loop"))
+		}
+		output += "\tjmp " + g.breakLabel + "\n"
+
+	case NodeStmtContinue:
+		if g.continueLabel == "nil" {
+			panic(fmt.Errorf("can't continue when not in a loop"))
+		}
+		output += "\tjmp " + g.continueLabel + "\n"
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt.variant))

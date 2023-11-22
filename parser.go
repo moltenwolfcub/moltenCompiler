@@ -110,6 +110,14 @@ func (p *Parser) ParseStmt() opt.Optional[NodeStmt] {
 		}
 		return opt.ToOptional(NodeStmt{node})
 
+	} else if tok := p.tryConsume(_break); tok.HasValue() {
+		p.mustTryConsume(semiColon, "missing ';'")
+		return opt.ToOptional(NodeStmt{NodeStmtBreak{}})
+
+	} else if tok := p.tryConsume(_continue); tok.HasValue() {
+		p.mustTryConsume(semiColon, "missing ';'")
+		return opt.ToOptional(NodeStmt{NodeStmtContinue{}})
+
 	} else {
 		return opt.Optional[NodeStmt]{}
 	}
@@ -339,6 +347,14 @@ type NodeStmtWhile struct {
 }
 
 func (NodeStmtWhile) IsNodeStmt() {}
+
+type NodeStmtBreak struct{}
+
+func (NodeStmtBreak) IsNodeStmt() {}
+
+type NodeStmtContinue struct{}
+
+func (NodeStmtContinue) IsNodeStmt() {}
 
 type NodeExpr struct {
 	variant interface {

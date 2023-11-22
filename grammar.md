@@ -10,6 +10,8 @@ $$
 		[\textcolor{lime}{scope}]\\
 		[\textcolor{lime}{if}]\\
 		\textcolor{cyan}{while}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
+		\textcolor{cyan}{break};\\
+		\textcolor{cyan}{continue};\\
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}
