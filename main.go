@@ -4,7 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 )
+
+// if true molten program will run els it will just compile to asm
+var ShouldRun = true
 
 func main() {
 	err := checkCLA()
@@ -36,10 +41,17 @@ func main() {
 	generator := NewGenerator(root)
 	asm := generator.GenProg()
 
-	err = writeToFile(asm)
+	err = writeToFile(strings.Split(os.Args[1], ".")[0], asm)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
+	}
+
+	if ShouldRun {
+		err = run(strings.Split(os.Args[1], ".")[0])
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 	}
 }
 
@@ -59,7 +71,7 @@ func loadProgram(fileName string) (string, error) {
 	return string(file), nil
 }
 
-func writeToFile(asm string) error {
+func writeToFile(filename string, asm string) error {
 	buildDir := "build"
 
 	if _, err := os.Stat(buildDir); errors.Is(err, os.ErrNotExist) {
@@ -68,13 +80,26 @@ func writeToFile(asm string) error {
 		}
 	}
 
-	file, err := os.Create(buildDir + "/test.asm")
+	file, err := os.Create(buildDir + "/" + filename + ".asm")
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 	_, err = file.WriteString(asm)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func run(filename string) error {
+	cmd := exec.Command("./run.sh", filename+".asm")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
 		return err
 	}
 	return nil

@@ -1,0 +1,15 @@
+var input;
+input = 7;
+
+var total;
+total = 1;
+
+while (1) {
+	total = total * input;
+	input = input - 1;
+	if (input - 1) {
+		continue;
+	}
+	break;
+}
+exit(total);
