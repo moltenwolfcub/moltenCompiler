@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	opt "github.com/moltenwolfcub/moltenCompiler/optional"
 )
@@ -383,11 +382,13 @@ func (p *Parser) mustTryConsume(tokType TokenType) opt.Optional[Token] {
 }
 
 func (p *Parser) error(message string) error {
+	var lineInfo LineInfo
 	if p.currentIndex < len(p.tokens) {
-		currentToken := p.tokens[p.currentIndex]
-		return fmt.Errorf("%s:%d:%d: %s", currentToken.file, currentToken.line, currentToken.col, message)
+		lineInfo = p.tokens[p.currentIndex].lineInfo
+	} else {
+		lineInfo = p.tokens[len(p.tokens)-1].lineInfo
 	}
-	return fmt.Errorf("EOF: %s", message)
+	return lineInfo.PositionedError(message)
 }
 
 type NodeProg struct {

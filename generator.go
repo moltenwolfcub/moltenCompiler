@@ -69,7 +69,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		}
 
 		if exists {
-			return "", g.error(stmt.ident, fmt.Sprintf("identifier already used: %v", variableName))
+			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("identifier already used: %v", variableName))
 		}
 		g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: variableName})
 		output += "\tmov rax, 0\n" //set a default starting value
@@ -86,7 +86,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			}
 		}
 		if !exists {
-			return "", g.error(stmt.ident, fmt.Sprintf("variables must be declared before assignment. '%s' is undefined", variableName))
+			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("variables must be declared before assignment. '%s' is undefined", variableName))
 		}
 
 		expr, err := g.GenExpr(stmt.expr)
@@ -144,13 +144,13 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 
 	case NodeStmtBreak:
 		if g.breakLabel == "nil" {
-			return "", g.error(stmt._break, "can't break when not in a loop")
+			return "", stmt._break.lineInfo.PositionedError("can't break when not in a loop")
 		}
 		output += "\tjmp " + g.breakLabel + "\n"
 
 	case NodeStmtContinue:
 		if g.continueLabel == "nil" {
-			return "", g.error(stmt._continue, "can't continue when not in a loop")
+			return "", stmt._continue.lineInfo.PositionedError("can't continue when not in a loop")
 		}
 		output += "\tjmp " + g.continueLabel + "\n"
 
@@ -276,7 +276,7 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 		}
 
 		if !exists {
-			return "", g.error(term.identifier, fmt.Sprintf("unknown identifier: %v", variableName))
+			return "", term.identifier.lineInfo.PositionedError(fmt.Sprintf("unknown identifier: %v", variableName))
 		}
 
 		output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
@@ -404,8 +404,4 @@ func (g *Generator) createLabel(labelCtx ...string) string {
 type Variable struct {
 	name     string
 	stackLoc uint
-}
-
-func (g Generator) error(t Token, message string) error {
-	return fmt.Errorf("%s:%d:%d: %s", t.file, t.line, t.col, message)
 }
