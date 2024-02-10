@@ -48,7 +48,7 @@ func (g *Generator) GenProg() (string, error) {
 func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 	output := ""
 
-	switch stmt := rawStmt.variant.(type) {
+	switch stmt := rawStmt.(type) {
 	case NodeStmtExit:
 		expr, err := g.GenExpr(stmt.expr)
 		if err != nil {
@@ -155,7 +155,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		output += "\tjmp " + g.continueLabel + "\n"
 
 	default:
-		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt.variant))
+		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt))
 	}
 	return output, nil
 }
@@ -163,7 +163,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 func (g *Generator) GenExpr(rawExpr NodeExpr) (string, error) {
 	output := ""
 
-	switch expr := rawExpr.variant.(type) {
+	switch expr := rawExpr.(type) {
 	case NodeTerm:
 		term, err := g.GenTerm(expr)
 		if err != nil {
@@ -177,7 +177,7 @@ func (g *Generator) GenExpr(rawExpr NodeExpr) (string, error) {
 		}
 		output += binExpr
 	default:
-		panic(fmt.Errorf("generator error: don't know how to generate expression: %T", rawExpr.variant))
+		panic(fmt.Errorf("generator error: don't know how to generate expression: %T", rawExpr))
 	}
 	return output, nil
 }

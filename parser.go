@@ -37,7 +37,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 	if p.mustTryConsume(exit).HasValue() {
 		_, err := p.tryConsume(openRoundBracket, "expected '(' after 'exit'")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 
 		var node NodeStmtExit
@@ -46,120 +46,120 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		if err == errMissingExpr {
 			// there isn't an expression, default to 0
 			if p.mustTryConsume(closeRoundBracket).HasValue() {
-				node = NodeStmtExit{NodeExpr{NodeTerm{NodeTermIntLiteral{Token{
+				node = NodeStmtExit{NodeTerm{NodeTermIntLiteral{Token{
 					tokenType: intLiteral,
 					value:     opt.ToOptional("0"),
-				}}}}}
+				}}}}
 			} else {
-				return NodeStmt{}, errors.New("invalid expression for exit. expected exit code or ')' for default value of 0")
+				return nil, errors.New("invalid expression for exit. expected exit code or ')' for default value of 0")
 			}
 		} else if err != nil {
 			// error reading expression
-			return NodeStmt{}, err
+			return nil, err
 		} else {
 			// read expression
 			node = NodeStmtExit{nodeExpr}
 
 			_, err = p.tryConsume(closeRoundBracket, "missing ')' after exit code")
 			if err != nil {
-				return NodeStmt{}, err
+				return nil, err
 			}
 		}
 
 		_, err = p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 
-		return NodeStmt{node}, nil
+		return node, nil
 	} else if p.mustTryConsume(_var).HasValue() {
 
 		tok, err := p.tryConsume(identifier, "expected variable identifier after `var`")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 		node := NodeStmtVarDeclare{tok}
 
 		_, err = p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 
-		return NodeStmt{node}, nil
+		return node, nil
 	} else if tok := p.mustTryConsume(identifier); tok.HasValue() {
 		node := NodeStmtVarAssign{
 			ident: tok.MustGetValue(),
 		}
 		_, err := p.tryConsume(equals, "expected '=' after variable name for assignment")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 
 		node.expr, err = p.ParseExpr()
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 
 		_, err = p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 
-		return NodeStmt{node}, nil
+		return node, nil
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == openCurlyBracket {
 		scope, err := p.ParseScope()
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
-		return NodeStmt{scope}, nil
+		return scope, nil
 
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == _if {
 		ifStmt, err := p.ParseIf()
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
-		return NodeStmt{ifStmt}, nil
+		return ifStmt, nil
 
 	} else if tok := p.mustTryConsume(while); tok.HasValue() {
 		node := NodeStmtWhile{}
 
 		_, err := p.tryConsume(openRoundBracket, "Expected '('")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 
 		node.expr, err = p.ParseExpr()
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 
 		_, err = p.tryConsume(closeRoundBracket, "Expected ')'")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
 
 		node.scope, err = p.ParseScope()
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
-		return NodeStmt{node}, nil
+		return node, nil
 
 	} else if tok := p.mustTryConsume(_break); tok.HasValue() {
 		_, err := p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
-		return NodeStmt{NodeStmtBreak{tok.MustGetValue()}}, nil
+		return NodeStmtBreak{tok.MustGetValue()}, nil
 
 	} else if tok := p.mustTryConsume(_continue); tok.HasValue() {
 		_, err := p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return NodeStmt{}, err
+			return nil, err
 		}
-		return NodeStmt{NodeStmtContinue{tok.MustGetValue()}}, nil
+		return NodeStmtContinue{tok.MustGetValue()}, nil
 
 	} else {
-		return NodeStmt{}, errMissingStmt
+		return nil, errMissingStmt
 	}
 }
 
@@ -290,13 +290,13 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 
 	lhsTerm, err := p.ParseTerm()
 	if err == errMissingTerm {
-		return NodeExpr{}, errMissingExpr
+		return nil, errMissingExpr
 	}
 	if err != nil {
-		return NodeExpr{}, err
+		return nil, err
 	}
 
-	lhsExpr := NodeExpr{lhsTerm}
+	lhsExpr := NodeExpr(lhsTerm)
 
 	for {
 		currentToken := p.peek()
@@ -313,7 +313,7 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 
 		rhsExpr, err := p.ParseExpr(nextMinPrec)
 		if err != nil {
-			return NodeExpr{}, err
+			return nil, err
 		}
 
 		expr := NodeBinExpr{}
@@ -343,7 +343,7 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 			}
 			expr.variant = divide
 		}
-		lhsExpr.variant = expr
+		lhsExpr = expr
 
 	}
 	return lhsExpr, nil
@@ -398,10 +398,8 @@ type NodeProg struct {
 	stmts []NodeStmt
 }
 
-type NodeStmt struct {
-	variant interface {
-		IsNodeStmt()
-	}
+type NodeStmt interface {
+	IsNodeStmt()
 }
 
 type NodeStmtExit struct {
@@ -450,10 +448,8 @@ type NodeStmtContinue struct {
 
 func (NodeStmtContinue) IsNodeStmt() {}
 
-type NodeExpr struct {
-	variant interface {
-		IsNodeExpr()
-	}
+type NodeExpr interface {
+	IsNodeExpr()
 }
 
 type NodeBinExpr struct {
