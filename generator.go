@@ -184,7 +184,7 @@ func (g *Generator) GenExpr(rawExpr NodeExpr) (string, error) {
 
 func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 	output := ""
-	switch binExpr := rawBinExpr.variant.(type) {
+	switch binExpr := rawBinExpr.(type) {
 	case NodeBinExprAdd:
 		expr, err := g.GenExpr(binExpr.left)
 		if err != nil {
@@ -250,7 +250,7 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += "\tdiv rbx\n"
 		output += g.push("rax")
 	default:
-		panic(fmt.Errorf("generator error: don't know how to generate binary expression: %T", rawBinExpr.variant))
+		panic(fmt.Errorf("generator error: don't know how to generate binary expression: %T", rawBinExpr))
 	}
 	return output, nil
 }
@@ -258,7 +258,7 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 	output := ""
 
-	switch term := rawTerm.variant.(type) {
+	switch term := rawTerm.(type) {
 	case NodeTermIntLiteral:
 		output += "\tmov rax, " + term.intLiteral.value.MustGetValue() + "\n"
 		output += g.push("rax")
@@ -288,7 +288,7 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 		}
 		output += expr
 	default:
-		panic(fmt.Errorf("generator error: don't know how to generate term: %T", rawTerm.variant))
+		panic(fmt.Errorf("generator error: don't know how to generate term: %T", rawTerm))
 	}
 	return output, nil
 }
@@ -346,7 +346,7 @@ func (g *Generator) GenIf(_if NodeStmtIf) (string, error) {
 func (g *Generator) GenElse(rawElse NodeElse) (string, error) {
 	output := ""
 
-	switch _else := rawElse.variant.(type) {
+	switch _else := rawElse.(type) {
 	case NodeElseScope:
 		scope, err := g.GenScope(_else.scope)
 		if err != nil {
@@ -360,7 +360,7 @@ func (g *Generator) GenElse(rawElse NodeElse) (string, error) {
 		}
 		output += ifStmt
 	default:
-		panic(fmt.Errorf("generator error: don't know how to generate else branch: %T", rawElse.variant))
+		panic(fmt.Errorf("generator error: don't know how to generate else branch: %T", rawElse))
 	}
 	return output, nil
 

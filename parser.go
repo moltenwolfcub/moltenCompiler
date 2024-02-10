@@ -46,10 +46,10 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		if err == errMissingExpr {
 			// there isn't an expression, default to 0
 			if p.mustTryConsume(closeRoundBracket).HasValue() {
-				node = NodeStmtExit{NodeTerm{NodeTermIntLiteral{Token{
+				node = NodeStmtExit{NodeTermIntLiteral{Token{
 					tokenType: intLiteral,
 					value:     opt.ToOptional("0"),
-				}}}}
+				}}}
 			} else {
 				return nil, errors.New("invalid expression for exit. expected exit code or ')' for default value of 0")
 			}
@@ -167,21 +167,21 @@ var errMissingStmt error = errors.New("expected statement but couldn't find one"
 
 func (p *Parser) ParseTerm() (NodeTerm, error) {
 	if tok := p.mustTryConsume(intLiteral); tok.HasValue() {
-		return NodeTerm{NodeTermIntLiteral{tok.MustGetValue()}}, nil
+		return NodeTermIntLiteral{tok.MustGetValue()}, nil
 	} else if tok := p.mustTryConsume(identifier); tok.HasValue() {
-		return NodeTerm{NodeTermIdentifier{tok.MustGetValue()}}, nil
+		return NodeTermIdentifier{tok.MustGetValue()}, nil
 	} else if p.mustTryConsume(openRoundBracket).HasValue() {
 		expr, err := p.ParseExpr()
 		if err != nil {
-			return NodeTerm{}, err
+			return nil, err
 		}
 		_, err = p.tryConsume(closeRoundBracket, "expected ')'")
 		if err != nil {
-			return NodeTerm{}, err
+			return nil, err
 		}
-		return NodeTerm{NodeTermRoundBracketExpr{expr}}, nil
+		return NodeTermRoundBracketExpr{expr}, nil
 	}
-	return NodeTerm{}, errMissingTerm
+	return nil, errMissingTerm
 }
 
 var errMissingTerm error = errors.New("expected term but couldn't find one")
@@ -254,7 +254,7 @@ func (p *Parser) ParseElse() (opt.Optional[NodeElse], error) {
 		return opt.Optional[NodeElse]{}, nil
 	}
 
-	node := NodeElse{}
+	var node NodeElse
 
 	ifStmt, err := p.ParseIf()
 
@@ -266,14 +266,14 @@ func (p *Parser) ParseElse() (opt.Optional[NodeElse], error) {
 		} else if err != nil {
 			return opt.Optional[NodeElse]{}, err
 		}
-		node.variant = NodeElseScope{scope}
+		node = NodeElseScope{scope}
 		return opt.ToOptional(node), nil
 
 	} else if err != nil {
 		return opt.Optional[NodeElse]{}, err
 
 	} else {
-		node.variant = NodeElseElif{ifStmt}
+		node = NodeElseElif{ifStmt}
 		return opt.ToOptional(node), nil
 	}
 }
@@ -316,32 +316,28 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 			return nil, err
 		}
 
-		expr := NodeBinExpr{}
+		var expr NodeBinExpr
 		switch op.tokenType {
 		case plus:
-			add := NodeBinExprAdd{
+			expr = NodeBinExprAdd{
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
-			expr.variant = add
 		case asterisk:
-			multiply := NodeBinExprMultiply{
+			expr = NodeBinExprMultiply{
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
-			expr.variant = multiply
 		case minus:
-			subtract := NodeBinExprSubtract{
+			expr = NodeBinExprSubtract{
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
-			expr.variant = subtract
 		case fslash:
-			divide := NodeBinExprDivide{
+			expr = NodeBinExprDivide{
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
-			expr.variant = divide
 		}
 		lhsExpr = expr
 
@@ -452,13 +448,10 @@ type NodeExpr interface {
 	IsNodeExpr()
 }
 
-type NodeBinExpr struct {
-	variant interface {
-		IsNodeBinExpr()
-	}
+type NodeBinExpr interface {
+	NodeExpr
+	IsNodeBinExpr()
 }
-
-func (NodeBinExpr) IsNodeExpr() {}
 
 type NodeBinExprAdd struct {
 	left  NodeExpr
@@ -466,6 +459,7 @@ type NodeBinExprAdd struct {
 }
 
 func (NodeBinExprAdd) IsNodeBinExpr() {}
+func (NodeBinExprAdd) IsNodeExpr()    {}
 
 type NodeBinExprSubtract struct {
 	left  NodeExpr
@@ -473,6 +467,7 @@ type NodeBinExprSubtract struct {
 }
 
 func (NodeBinExprSubtract) IsNodeBinExpr() {}
+func (NodeBinExprSubtract) IsNodeExpr()    {}
 
 type NodeBinExprMultiply struct {
 	left  NodeExpr
@@ -480,6 +475,7 @@ type NodeBinExprMultiply struct {
 }
 
 func (NodeBinExprMultiply) IsNodeBinExpr() {}
+func (NodeBinExprMultiply) IsNodeExpr()    {}
 
 type NodeBinExprDivide struct {
 	left  NodeExpr
@@ -487,32 +483,33 @@ type NodeBinExprDivide struct {
 }
 
 func (NodeBinExprDivide) IsNodeBinExpr() {}
+func (NodeBinExprDivide) IsNodeExpr()    {}
 
-type NodeTerm struct {
-	variant interface {
-		IsNodeTerm()
-	}
+type NodeTerm interface {
+	NodeExpr
+	IsNodeTerm()
 }
-
-func (NodeTerm) IsNodeExpr() {}
 
 type NodeTermIntLiteral struct {
 	intLiteral Token
 }
 
-func (n NodeTermIntLiteral) IsNodeTerm() {}
+func (NodeTermIntLiteral) IsNodeTerm() {}
+func (NodeTermIntLiteral) IsNodeExpr() {}
 
 type NodeTermIdentifier struct {
 	identifier Token
 }
 
 func (NodeTermIdentifier) IsNodeTerm() {}
+func (NodeTermIdentifier) IsNodeExpr() {}
 
 type NodeTermRoundBracketExpr struct {
 	expr NodeExpr
 }
 
 func (NodeTermRoundBracketExpr) IsNodeTerm() {}
+func (NodeTermRoundBracketExpr) IsNodeExpr() {}
 
 type NodeScope struct {
 	stmts []NodeStmt
@@ -520,10 +517,8 @@ type NodeScope struct {
 
 func (NodeScope) IsNodeStmt() {}
 
-type NodeElse struct {
-	variant interface {
-		IsNodeElif()
-	}
+type NodeElse interface {
+	IsNodeElif()
 }
 
 type NodeElseElif struct {
