@@ -23,7 +23,7 @@ func main() {
 		return
 	}
 
-	tokeniser := NewTokeniser(program)
+	tokeniser := NewTokeniser(program, os.Args[1])
 	tokens, err := tokeniser.Tokenise()
 	if err != nil {
 		fmt.Println(err.Error())

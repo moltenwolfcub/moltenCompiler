@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"unicode"
 
@@ -46,86 +45,121 @@ func (t TokenType) GetBinPrec() opt.Optional[int] {
 type Token struct {
 	tokenType TokenType
 	value     opt.Optional[string]
+
+	file string
+	line int
+	col  int
 }
 
 type Tokeniser struct {
 	program      string
 	currentIndex int
+
+	fileName  string
+	lineCount int
+	colCount  int
 }
 
-func NewTokeniser(program string) Tokeniser {
+func NewTokeniser(program string, fileName string) Tokeniser {
 	return Tokeniser{
-		program: program,
+		program:   program,
+		fileName:  fileName,
+		lineCount: 1,
+		colCount:  1,
 	}
 }
 
-func (t Tokeniser) Tokenise() ([]Token, error) {
+func (t *Tokeniser) Tokenise() ([]Token, error) {
 	tokens := []Token{}
 	buf := []rune{}
 
 	for t.peek().HasValue() {
-		if unicode.IsSpace(t.peek().MustGetValue()) {
+		if t.peek().MustGetValue() == '\n' {
 			t.consume()
+			t.lineCount++
+			t.colCount = 1
+
+		} else if unicode.IsSpace(t.peek().MustGetValue()) {
+			t.consume()
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == ';' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: semiColon})
+			tokens = append(tokens, Token{tokenType: semiColon, line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == '(' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: openRoundBracket})
+			tokens = append(tokens, Token{tokenType: openRoundBracket, line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == ')' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: closeRoundBracket})
+			tokens = append(tokens, Token{tokenType: closeRoundBracket, line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == '{' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: openCurlyBracket})
+			tokens = append(tokens, Token{tokenType: openCurlyBracket, line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == '}' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: closeCurlyBracket})
+			tokens = append(tokens, Token{tokenType: closeCurlyBracket, line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == '=' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: equals})
+			tokens = append(tokens, Token{tokenType: equals, line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == '+' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: plus})
+			tokens = append(tokens, Token{tokenType: plus, line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == '*' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: asterisk})
+			tokens = append(tokens, Token{tokenType: asterisk, line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == '-' {
 			t.consume()
-			tokens = append(tokens, Token{tokenType: minus})
+			tokens = append(tokens, Token{tokenType: minus, line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += 1
 
 		} else if t.peek().MustGetValue() == '/' {
 			t.consume()
 			if t.peek().HasValue() && t.peek().MustGetValue() == '/' {
 				t.consume()
+				t.colCount += 1
 				for t.peek().HasValue() && t.peek().MustGetValue() != '\n' {
 					t.consume()
+					t.colCount += 1
 				}
 			} else if t.peek().HasValue() && t.peek().MustGetValue() == '*' {
 				t.consume()
+				t.colCount += 1
 				for {
 					if !t.peek().HasValue() {
-						panic(errors.New("multiline comment didn't have an end. terminate it with `*/`"))
+						return nil, t.error("multiline comment wasn't closed. terminate it with `*/`")
 					}
 
 					c := t.consume()
+					t.colCount += 1
 					if c == '*' && t.peek().HasValue() && t.peek().MustGetValue() == '/' {
 						t.consume()
+						t.colCount += 1
 						break
+					} else if c == '\n' {
+						t.lineCount++
+						t.colCount = 1
 					}
 				}
 
 			} else {
-				tokens = append(tokens, Token{tokenType: fslash})
+				tokens = append(tokens, Token{tokenType: fslash, line: t.lineCount, col: t.colCount, file: t.fileName})
+				t.colCount += 1
 			}
 
 		} else if unicode.IsLetter(t.peek().MustGetValue()) || t.peek().MustGetValue() == '$' || t.peek().MustGetValue() == '_' {
@@ -135,28 +169,36 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 			}
 
 			if string(buf) == "exit" {
-				tokens = append(tokens, Token{tokenType: exit})
+				tokens = append(tokens, Token{tokenType: exit, line: t.lineCount, col: t.colCount, file: t.fileName})
+				t.colCount += len(buf)
 				buf = []rune{}
 			} else if string(buf) == "var" {
-				tokens = append(tokens, Token{tokenType: _var})
+				tokens = append(tokens, Token{tokenType: _var, line: t.lineCount, col: t.colCount, file: t.fileName})
+				t.colCount += len(buf)
 				buf = []rune{}
 			} else if string(buf) == "if" {
-				tokens = append(tokens, Token{tokenType: _if})
+				tokens = append(tokens, Token{tokenType: _if, line: t.lineCount, col: t.colCount, file: t.fileName})
+				t.colCount += len(buf)
 				buf = []rune{}
 			} else if string(buf) == "while" {
-				tokens = append(tokens, Token{tokenType: while})
+				tokens = append(tokens, Token{tokenType: while, line: t.lineCount, col: t.colCount, file: t.fileName})
+				t.colCount += len(buf)
 				buf = []rune{}
 			} else if string(buf) == "else" {
-				tokens = append(tokens, Token{tokenType: _else})
+				tokens = append(tokens, Token{tokenType: _else, line: t.lineCount, col: t.colCount, file: t.fileName})
+				t.colCount += len(buf)
 				buf = []rune{}
 			} else if string(buf) == "break" {
-				tokens = append(tokens, Token{tokenType: _break})
+				tokens = append(tokens, Token{tokenType: _break, line: t.lineCount, col: t.colCount, file: t.fileName})
+				t.colCount += len(buf)
 				buf = []rune{}
 			} else if string(buf) == "continue" {
-				tokens = append(tokens, Token{tokenType: _continue})
+				tokens = append(tokens, Token{tokenType: _continue, line: t.lineCount, col: t.colCount, file: t.fileName})
+				t.colCount += len(buf)
 				buf = []rune{}
 			} else {
-				tokens = append(tokens, Token{tokenType: identifier, value: opt.ToOptional(string(buf))})
+				tokens = append(tokens, Token{tokenType: identifier, value: opt.ToOptional(string(buf)), line: t.lineCount, col: t.colCount, file: t.fileName})
+				t.colCount += len(buf)
 				buf = []rune{}
 			}
 
@@ -166,11 +208,12 @@ func (t Tokeniser) Tokenise() ([]Token, error) {
 				buf = append(buf, t.consume())
 			}
 
-			tokens = append(tokens, Token{tokenType: intLiteral, value: opt.ToOptional(string(buf))})
+			tokens = append(tokens, Token{tokenType: intLiteral, value: opt.ToOptional(string(buf)), line: t.lineCount, col: t.colCount, file: t.fileName})
+			t.colCount += len(buf)
 			buf = []rune{}
 
 		} else {
-			return nil, fmt.Errorf("unknown token: %c", t.peek().MustGetValue())
+			return nil, t.error(fmt.Sprintf("invalid token: %c", t.peek().MustGetValue()))
 		}
 	}
 
@@ -188,4 +231,8 @@ func (t *Tokeniser) consume() rune {
 	r := rune(t.program[t.currentIndex])
 	t.currentIndex++
 	return r
+}
+
+func (t Tokeniser) error(message string) error {
+	return fmt.Errorf("%s:%d:%d: %s", t.fileName, t.lineCount, t.colCount, message)
 }
