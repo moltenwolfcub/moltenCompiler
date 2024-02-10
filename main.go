@@ -31,7 +31,11 @@ func main() {
 	}
 
 	parser := NewParser(tokens)
-	rootNode := parser.ParseProg()
+	rootNode, err := parser.ParseProg()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	root, err := rootNode.GetValue()
 	if err != nil {
