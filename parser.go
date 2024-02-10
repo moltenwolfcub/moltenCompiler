@@ -18,293 +18,269 @@ func NewParser(tokens []Token) Parser {
 	}
 }
 
-func (p *Parser) ParseProg() (opt.Optional[NodeProg], error) {
+func (p *Parser) ParseProg() (NodeProg, error) {
 	node := NodeProg{
 		[]NodeStmt{},
 	}
 	for p.peek().HasValue() {
 		stmt, err := p.ParseStmt()
 		if err != nil {
-			return opt.Optional[NodeProg]{}, err
+			return NodeProg{}, p.error(err.Error())
 		}
 
-		if stmt.HasValue() {
-			node.stmts = append(node.stmts, stmt.MustGetValue())
-		} else {
-			return opt.Optional[NodeProg]{}, p.error("invalid statment")
-		}
+		node.stmts = append(node.stmts, stmt)
 	}
-	return opt.ToOptional(node), nil
+	return node, nil
 }
 
-func (p *Parser) ParseStmt() (opt.Optional[NodeStmt], error) {
+func (p *Parser) ParseStmt() (NodeStmt, error) {
 	if p.mustTryConsume(exit).HasValue() {
 		_, err := p.tryConsume(openRoundBracket, "expected '(' after 'exit'")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
 
 		var node NodeStmtExit
 
 		nodeExpr, err := p.ParseExpr()
-		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
-		}
-		if nodeExpr.HasValue() {
-			node = NodeStmtExit{nodeExpr.MustGetValue()}
-
-		} else if p.mustTryConsume(closeRoundBracket).HasValue() {
-			node = NodeStmtExit{NodeExpr{NodeTerm{NodeTermIntLiteral{Token{
-				tokenType: intLiteral,
-				value:     opt.ToOptional("0"),
-			}}}}}
+		if err == errMissingExpr {
+			// there isn't an expression, default to 0
+			if p.mustTryConsume(closeRoundBracket).HasValue() {
+				node = NodeStmtExit{NodeExpr{NodeTerm{NodeTermIntLiteral{Token{
+					tokenType: intLiteral,
+					value:     opt.ToOptional("0"),
+				}}}}}
+			} else {
+				return NodeStmt{}, errors.New("invalid expression for exit. expected exit code or ')' for default value of 0")
+			}
+		} else if err != nil {
+			// error reading expression
+			return NodeStmt{}, err
 		} else {
-			return opt.Optional[NodeStmt]{}, p.error("invalid expression for exit")
+			// read expression
+			node = NodeStmtExit{nodeExpr}
+
+			_, err = p.tryConsume(closeRoundBracket, "missing ')' after exit code")
+			if err != nil {
+				return NodeStmt{}, err
+			}
 		}
 
-		_, err = p.tryConsume(closeRoundBracket, "missing ')'")
-		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
-		}
 		_, err = p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
 
-		return opt.ToOptional(NodeStmt{node}), nil
+		return NodeStmt{node}, nil
 	} else if p.mustTryConsume(_var).HasValue() {
 
-		tok, err := p.tryConsume(identifier, "expected variable name after `var`")
+		tok, err := p.tryConsume(identifier, "expected variable identifier after `var`")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
 		node := NodeStmtVarDeclare{tok}
 
 		_, err = p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
 
-		return opt.ToOptional(NodeStmt{node}), nil
+		return NodeStmt{node}, nil
 	} else if tok := p.mustTryConsume(identifier); tok.HasValue() {
 		node := NodeStmtVarAssign{
 			ident: tok.MustGetValue(),
 		}
 		_, err := p.tryConsume(equals, "expected '=' after variable name for assignment")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
 
-		expr, err := p.ParseExpr()
+		node.expr, err = p.ParseExpr()
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
-		}
-		if expr.HasValue() {
-			node.expr = expr.MustGetValue()
-		} else {
-			return opt.Optional[NodeStmt]{}, p.error("invalid expression for variable assigment")
+			return NodeStmt{}, err
 		}
 
 		_, err = p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
 
-		return opt.ToOptional(NodeStmt{node}), nil
-	} else if p.peek().MustGetValue().tokenType == openCurlyBracket {
+		return NodeStmt{node}, nil
+	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == openCurlyBracket {
 		scope, err := p.ParseScope()
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
-		if !scope.HasValue() {
-			panic(errors.New("invalid scope"))
-		}
-		return opt.ToOptional(NodeStmt{scope.MustGetValue()}), nil
+		return NodeStmt{scope}, nil
 
-	} else if p.peek().MustGetValue().tokenType == _if {
+	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == _if {
 		ifStmt, err := p.ParseIf()
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
-		if !ifStmt.HasValue() {
-			panic(errors.New("invalid if statement"))
-		}
-		return opt.ToOptional(NodeStmt{ifStmt.MustGetValue()}), nil
+		return NodeStmt{ifStmt}, nil
 
 	} else if tok := p.mustTryConsume(while); tok.HasValue() {
 		node := NodeStmtWhile{}
 
 		_, err := p.tryConsume(openRoundBracket, "Expected '('")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
 
-		expr, err := p.ParseExpr()
+		node.expr, err = p.ParseExpr()
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
-		}
-		if expr.HasValue() {
-			node.expr = expr.MustGetValue()
-		} else {
-			panic(errors.New("invalid expression"))
+			return NodeStmt{}, err
 		}
 
 		_, err = p.tryConsume(closeRoundBracket, "Expected ')'")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
 
-		scope, err := p.ParseScope()
+		node.scope, err = p.ParseScope()
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
-		if scope.HasValue() {
-			node.scope = scope.MustGetValue()
-		} else {
-			panic(errors.New("invalid if statement, expected scope"))
-		}
-		return opt.ToOptional(NodeStmt{node}), nil
+		return NodeStmt{node}, nil
 
 	} else if tok := p.mustTryConsume(_break); tok.HasValue() {
 		_, err := p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
-		return opt.ToOptional(NodeStmt{NodeStmtBreak{}}), nil
+		return NodeStmt{NodeStmtBreak{}}, nil
 
 	} else if tok := p.mustTryConsume(_continue); tok.HasValue() {
 		_, err := p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
-			return opt.Optional[NodeStmt]{}, err
+			return NodeStmt{}, err
 		}
-		return opt.ToOptional(NodeStmt{NodeStmtContinue{}}), nil
+		return NodeStmt{NodeStmtContinue{}}, nil
 
 	} else {
-		return opt.Optional[NodeStmt]{}, nil
+		return NodeStmt{}, errMissingStmt
 	}
 }
 
-func (p *Parser) ParseTerm() (opt.Optional[NodeTerm], error) {
+var errMissingStmt error = errors.New("expected statement but couldn't find one")
+
+func (p *Parser) ParseTerm() (NodeTerm, error) {
 	if tok := p.mustTryConsume(intLiteral); tok.HasValue() {
-		return opt.ToOptional(NodeTerm{NodeTermIntLiteral{tok.MustGetValue()}}), nil
+		return NodeTerm{NodeTermIntLiteral{tok.MustGetValue()}}, nil
 	} else if tok := p.mustTryConsume(identifier); tok.HasValue() {
-		return opt.ToOptional(NodeTerm{NodeTermIdentifier{tok.MustGetValue()}}), nil
+		return NodeTerm{NodeTermIdentifier{tok.MustGetValue()}}, nil
 	} else if p.mustTryConsume(openRoundBracket).HasValue() {
 		expr, err := p.ParseExpr()
 		if err != nil {
-			return opt.Optional[NodeTerm]{}, err
-		}
-		if !expr.HasValue() {
-			panic(errors.New("expected expression"))
+			return NodeTerm{}, err
 		}
 		_, err = p.tryConsume(closeRoundBracket, "expected ')'")
 		if err != nil {
-			return opt.Optional[NodeTerm]{}, err
+			return NodeTerm{}, err
 		}
-		return opt.ToOptional(NodeTerm{NodeTermRoundBracketExpr{expr.MustGetValue()}}), nil
+		return NodeTerm{NodeTermRoundBracketExpr{expr}}, nil
 	}
-	return opt.Optional[NodeTerm]{}, nil
+	return NodeTerm{}, errMissingTerm
 }
 
-func (p *Parser) ParseScope() (opt.Optional[NodeScope], error) {
+var errMissingTerm error = errors.New("expected term but couldn't find one")
+
+func (p *Parser) ParseScope() (NodeScope, error) {
 	if !p.mustTryConsume(openCurlyBracket).HasValue() {
-		return opt.Optional[NodeScope]{}, nil
+		return NodeScope{}, nil
 	}
 
 	var scope NodeScope
 	for {
 		stmt, err := p.ParseStmt()
-		if err != nil {
-			return opt.Optional[NodeScope]{}, err
-		}
-		if !stmt.HasValue() {
+		if err == errMissingStmt {
 			break
+		} else if err != nil {
+			return NodeScope{}, err
 		}
 
-		scope.stmts = append(scope.stmts, stmt.MustGetValue())
+		scope.stmts = append(scope.stmts, stmt)
 	}
 	_, err := p.tryConsume(closeCurlyBracket, "expected '}'")
 	if err != nil {
-		return opt.Optional[NodeScope]{}, err
+		return NodeScope{}, err
 	}
 
-	return opt.ToOptional(scope), nil
+	return scope, nil
 }
 
-func (p *Parser) ParseIf() (opt.Optional[NodeStmtIf], error) {
+var errMissingScopeStmt error = errors.New("expected a scope statement but didn't find an open brace")
+
+func (p *Parser) ParseIf() (NodeStmtIf, error) {
 	if !p.mustTryConsume(_if).HasValue() {
-		return opt.Optional[NodeStmtIf]{}, nil
+		return NodeStmtIf{}, errMissingIfStmt
 	}
 
 	node := NodeStmtIf{}
 
 	_, err := p.tryConsume(openRoundBracket, "Expected '('")
 	if err != nil {
-		return opt.Optional[NodeStmtIf]{}, err
+		return NodeStmtIf{}, err
 	}
 
-	expr, err := p.ParseExpr()
+	node.expr, err = p.ParseExpr()
 	if err != nil {
-		return opt.Optional[NodeStmtIf]{}, err
+		return NodeStmtIf{}, err
 	}
-	if expr.HasValue() {
-		node.expr = expr.MustGetValue()
-	} else {
-		panic(errors.New("invalid expression"))
-	}
+
 	_, err = p.tryConsume(closeRoundBracket, "Expected ')'")
 	if err != nil {
-		return opt.Optional[NodeStmtIf]{}, err
+		return NodeStmtIf{}, err
 	}
 
-	scope, err := p.ParseScope()
+	node.scope, err = p.ParseScope()
 	if err != nil {
-		return opt.Optional[NodeStmtIf]{}, err
-	}
-	if scope.HasValue() {
-		node.scope = scope.MustGetValue()
-	} else {
-		panic(errors.New("invalid if statement, expected scope"))
+		return NodeStmtIf{}, err
 	}
 
-	if p.mustTryConsume(_else).HasValue() {
-		node.elseBranch, err = p.ParseElse()
-		if err != nil {
-			return opt.Optional[NodeStmtIf]{}, err
-		}
+	node.elseBranch, err = p.ParseElse()
+	if err != nil {
+		return NodeStmtIf{}, err
 	}
 
-	return opt.ToOptional(node), nil
+	return node, nil
 }
 
+var errMissingIfStmt error = errors.New("expected if statement but didn't find `if` token")
+
 func (p *Parser) ParseElse() (opt.Optional[NodeElse], error) {
+	if !p.mustTryConsume(_else).HasValue() {
+		return opt.Optional[NodeElse]{}, nil
+	}
+
 	node := NodeElse{}
 
 	ifStmt, err := p.ParseIf()
-	if err != nil {
-		return opt.Optional[NodeElse]{}, err
-	}
-	if ifStmt.HasValue() {
-		elifNode := NodeElseElif{ifStmt.MustGetValue()}
-		node.variant = elifNode
-		return opt.ToOptional(node), nil
-	} else {
+
+	if err == errMissingIfStmt {
 		scope, err := p.ParseScope()
-		if err != nil {
+		if err == errMissingScopeStmt {
+			return opt.Optional[NodeElse]{}, errors.New("expected scope or else-if statement following `else` keyword")
+
+		} else if err != nil {
 			return opt.Optional[NodeElse]{}, err
 		}
-		if scope.HasValue() {
-			scopeNode := NodeElseScope{scope.MustGetValue()}
-			node.variant = scopeNode
-			return opt.ToOptional(node), nil
-		}
+		node.variant = NodeElseScope{scope}
+		return opt.ToOptional(node), nil
+
+	} else if err != nil {
+		return opt.Optional[NodeElse]{}, err
+
+	} else {
+		node.variant = NodeElseElif{ifStmt}
+		return opt.ToOptional(node), nil
 	}
-	return opt.Optional[NodeElse]{}, nil
 }
 
 // based off of this principle and algorithm:
 // https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing
-func (p *Parser) ParseExpr(minPrecedence ...int) (opt.Optional[NodeExpr], error) {
+func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 	var minPrec int
 	if len(minPrecedence) == 1 {
 		minPrec = minPrecedence[0]
@@ -313,15 +289,14 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (opt.Optional[NodeExpr], error)
 	}
 
 	lhsTerm, err := p.ParseTerm()
+	if err == errMissingTerm {
+		return NodeExpr{}, errMissingExpr
+	}
 	if err != nil {
-		return opt.Optional[NodeExpr]{}, err
+		return NodeExpr{}, err
 	}
 
-	if !lhsTerm.HasValue() {
-		return opt.Optional[NodeExpr]{}, nil
-	}
-
-	lhsExpr := NodeExpr{lhsTerm.MustGetValue()}
+	lhsExpr := NodeExpr{lhsTerm}
 
 	for {
 		currentToken := p.peek()
@@ -338,10 +313,7 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (opt.Optional[NodeExpr], error)
 
 		rhsExpr, err := p.ParseExpr(nextMinPrec)
 		if err != nil {
-			return opt.Optional[NodeExpr]{}, err
-		}
-		if !rhsExpr.HasValue() {
-			panic(errors.New("unable to parse expression"))
+			return NodeExpr{}, err
 		}
 
 		expr := NodeBinExpr{}
@@ -349,33 +321,35 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (opt.Optional[NodeExpr], error)
 		case plus:
 			add := NodeBinExprAdd{
 				left:  lhsExpr,
-				right: rhsExpr.MustGetValue(),
+				right: rhsExpr,
 			}
 			expr.variant = add
 		case asterisk:
 			multiply := NodeBinExprMultiply{
 				left:  lhsExpr,
-				right: rhsExpr.MustGetValue(),
+				right: rhsExpr,
 			}
 			expr.variant = multiply
 		case minus:
 			subtract := NodeBinExprSubtract{
 				left:  lhsExpr,
-				right: rhsExpr.MustGetValue(),
+				right: rhsExpr,
 			}
 			expr.variant = subtract
 		case fslash:
 			divide := NodeBinExprDivide{
 				left:  lhsExpr,
-				right: rhsExpr.MustGetValue(),
+				right: rhsExpr,
 			}
 			expr.variant = divide
 		}
 		lhsExpr.variant = expr
 
 	}
-	return opt.ToOptional(lhsExpr), nil
+	return lhsExpr, nil
 }
+
+var errMissingExpr error = errors.New("expected expression")
 
 func (p Parser) peek(offset ...int) opt.Optional[Token] {
 	var offsetAmount int
@@ -401,7 +375,7 @@ func (p *Parser) tryConsume(tokType TokenType, errMsg string) (Token, error) {
 	if p.peek().HasValue() && p.peek().MustGetValue().tokenType == tokType {
 		return p.consume(), nil
 	} else {
-		return Token{}, p.error(errMsg)
+		return Token{}, errors.New(errMsg)
 	}
 }
 func (p *Parser) mustTryConsume(tokType TokenType) opt.Optional[Token] {
@@ -413,9 +387,11 @@ func (p *Parser) mustTryConsume(tokType TokenType) opt.Optional[Token] {
 }
 
 func (p *Parser) error(message string) error {
-	currentToken := p.tokens[p.currentIndex]
-
-	return fmt.Errorf("%s:%d:%d: %s", currentToken.file, currentToken.line, currentToken.col, message)
+	if p.currentIndex < len(p.tokens) {
+		currentToken := p.tokens[p.currentIndex]
+		return fmt.Errorf("%s:%d:%d: %s", currentToken.file, currentToken.line, currentToken.col, message)
+	}
+	return fmt.Errorf("EOF: %s", message)
 }
 
 type NodeProg struct {

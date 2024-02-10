@@ -31,17 +31,12 @@ func main() {
 	}
 
 	parser := NewParser(tokens)
-	rootNode, err := parser.ParseProg()
+	root, err := parser.ParseProg()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	root, err := rootNode.GetValue()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
 	generator := NewGenerator(root)
 	asm := generator.GenProg()
 
