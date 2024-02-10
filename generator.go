@@ -26,11 +26,15 @@ func NewGenerator(prog NodeProg) Generator {
 	}
 }
 
-func (g *Generator) GenProg() string {
+func (g *Generator) GenProg() (string, error) {
 	output := "global _start\n_start:\n"
 
 	for _, stmt := range g.program.stmts {
-		output += g.GenStmt(stmt) + "\n"
+		generated, err := g.GenStmt(stmt)
+		if err != nil {
+			return "", err
+		}
+		output += generated + "\n"
 	}
 
 	//exit 0 at end of program if no explicit exit called
@@ -38,15 +42,19 @@ func (g *Generator) GenProg() string {
 	output += "\tmov rdi, 0\n"
 	output += "\tsyscall\n"
 
-	return output
+	return output, nil
 }
 
-func (g *Generator) GenStmt(rawStmt NodeStmt) string {
+func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 	output := ""
 
 	switch stmt := rawStmt.variant.(type) {
 	case NodeStmtExit:
-		output += g.GenExpr(stmt.expr)
+		expr, err := g.GenExpr(stmt.expr)
+		if err != nil {
+			return "", err
+		}
+		output += expr
 		output += "\tmov rax, 60\n"
 		output += g.pop("rdi")
 		output += "\tsyscall\n"
@@ -61,7 +69,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 		}
 
 		if exists {
-			panic(fmt.Errorf("identifier already used: %v", variableName))
+			return "", g.error(stmt.ident, fmt.Sprintf("identifier already used: %v", variableName))
 		}
 		g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: variableName})
 		output += "\tmov rax, 0\n" //set a default starting value
@@ -78,17 +86,29 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 			}
 		}
 		if !exists {
-			panic(fmt.Errorf("variables must be declared before assignment. '%s' is undefined", variableName))
+			return "", g.error(stmt.ident, fmt.Sprintf("variables must be declared before assignment. '%s' is undefined", variableName))
 		}
 
-		output += g.GenExpr(stmt.expr)
+		expr, err := g.GenExpr(stmt.expr)
+		if err != nil {
+			return "", err
+		}
+		output += expr
 		output += g.pop("rax")
 		output += fmt.Sprintf("\tmov QWORD [rsp + %v], rax\n", (g.stackSize-variable.stackLoc-1)*8)
 
 	case NodeScope:
-		output += g.GenScope(stmt)
+		scope, err := g.GenScope(stmt)
+		if err != nil {
+			return "", err
+		}
+		output += scope
 	case NodeStmtIf:
-		output += g.GenIf(stmt)
+		ifStmt, err := g.GenIf(stmt)
+		if err != nil {
+			return "", err
+		}
+		output += ifStmt
 
 	case NodeStmtWhile:
 		startLabel := g.createLabel("startWhile")
@@ -99,13 +119,21 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 
 		output += startLabel + ":\n"
 
-		output += g.GenExpr(stmt.expr)
+		expr, err := g.GenExpr(stmt.expr)
+		if err != nil {
+			return "", err
+		}
+		output += expr
 		output += g.pop("rax")
 
 		output += "\ttest rax, rax\n"
 		output += "\tjz " + endLabel + "\n"
 
-		output += g.GenScope(stmt.scope)
+		scope, err := g.GenScope(stmt.scope)
+		if err != nil {
+			return "", err
+		}
+		output += scope
 
 		output += "\tjmp " + startLabel + "\n"
 
@@ -116,63 +144,107 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) string {
 
 	case NodeStmtBreak:
 		if g.breakLabel == "nil" {
-			panic(fmt.Errorf("can't break when not in a loop"))
+			return "", g.error(stmt._break, "can't break when not in a loop")
 		}
 		output += "\tjmp " + g.breakLabel + "\n"
 
 	case NodeStmtContinue:
 		if g.continueLabel == "nil" {
-			panic(fmt.Errorf("can't continue when not in a loop"))
+			return "", g.error(stmt._continue, "can't continue when not in a loop")
 		}
 		output += "\tjmp " + g.continueLabel + "\n"
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt.variant))
 	}
-	return output
+	return output, nil
 }
 
-func (g *Generator) GenExpr(rawExpr NodeExpr) string {
+func (g *Generator) GenExpr(rawExpr NodeExpr) (string, error) {
 	output := ""
 
 	switch expr := rawExpr.variant.(type) {
 	case NodeTerm:
-		output += g.GenTerm(expr)
+		term, err := g.GenTerm(expr)
+		if err != nil {
+			return "", err
+		}
+		output += term
 	case NodeBinExpr:
-		output += g.GenBinExpr(expr)
+		binExpr, err := g.GenBinExpr(expr)
+		if err != nil {
+			return "", err
+		}
+		output += binExpr
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate expression: %T", rawExpr.variant))
 	}
-	return output
+	return output, nil
 }
 
-func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) string {
+func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 	output := ""
 	switch binExpr := rawBinExpr.variant.(type) {
 	case NodeBinExprAdd:
-		output += g.GenExpr(binExpr.left)
-		output += g.GenExpr(binExpr.right)
+		expr, err := g.GenExpr(binExpr.left)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+		expr, err = g.GenExpr(binExpr.right)
+		if err != nil {
+			return "", err
+		}
+
+		output += expr
 		output += g.pop("rbx")
 		output += g.pop("rax")
 		output += "\tadd rax, rbx\n"
 		output += g.push("rax")
 	case NodeBinExprSubtract:
-		output += g.GenExpr(binExpr.left)
-		output += g.GenExpr(binExpr.right)
+		expr, err := g.GenExpr(binExpr.left)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+		expr, err = g.GenExpr(binExpr.right)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+
 		output += g.pop("rbx")
 		output += g.pop("rax")
 		output += "\tsub rax, rbx\n"
 		output += g.push("rax")
 	case NodeBinExprMultiply:
-		output += g.GenExpr(binExpr.left)
-		output += g.GenExpr(binExpr.right)
+		expr, err := g.GenExpr(binExpr.left)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+		expr, err = g.GenExpr(binExpr.right)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+
 		output += g.pop("rbx")
 		output += g.pop("rax")
 		output += "\tmul rbx\n"
 		output += g.push("rax")
 	case NodeBinExprDivide:
-		output += g.GenExpr(binExpr.left)
-		output += g.GenExpr(binExpr.right)
+		expr, err := g.GenExpr(binExpr.left)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+		expr, err = g.GenExpr(binExpr.right)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+
 		output += g.pop("rbx")
 		output += g.pop("rax")
 		output += "\tdiv rbx\n"
@@ -180,10 +252,10 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) string {
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate binary expression: %T", rawBinExpr.variant))
 	}
-	return output
+	return output, nil
 }
 
-func (g *Generator) GenTerm(rawTerm NodeTerm) string {
+func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 	output := ""
 
 	switch term := rawTerm.variant.(type) {
@@ -204,64 +276,93 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) string {
 		}
 
 		if !exists {
-			panic(fmt.Errorf("unknown identifier: %v", variableName))
+			return "", g.error(term.identifier, fmt.Sprintf("unknown identifier: %v", variableName))
 		}
 
 		output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
 
 	case NodeTermRoundBracketExpr:
-		output += g.GenExpr(term.expr)
+		expr, err := g.GenExpr(term.expr)
+		if err != nil {
+			return "", err
+		}
+		output += expr
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate term: %T", rawTerm.variant))
 	}
-	return output
+	return output, nil
 }
 
-func (g *Generator) GenScope(scope NodeScope) string {
+func (g *Generator) GenScope(scope NodeScope) (string, error) {
 	output := ""
 
 	output += g.beginScope()
 
 	for _, stmt := range scope.stmts {
-		output += g.GenStmt(stmt)
+		generated, err := g.GenStmt(stmt)
+		if err != nil {
+			return "", err
+		}
+		output += generated
 	}
 
 	output += g.endScope()
 
-	return output
+	return output, nil
 }
 
-func (g *Generator) GenIf(_if NodeStmtIf) string {
+func (g *Generator) GenIf(_if NodeStmtIf) (string, error) {
 	output := ""
 
-	output += g.GenExpr(_if.expr)
+	expr, err := g.GenExpr(_if.expr)
+	if err != nil {
+		return "", err
+	}
+	output += expr
+
 	output += g.pop("rax")
 
 	label := g.createLabel("else")
 	output += "\ttest rax, rax\n"
 	output += "\tjz " + label + "\n"
-	output += g.GenScope(_if.scope)
+	scope, err := g.GenScope(_if.scope)
+	if err != nil {
+		return "", err
+	}
+	output += scope
 	output += label + ":\n"
 
 	if _if.elseBranch.HasValue() {
-		output += g.GenElse(_if.elseBranch.MustGetValue())
+		_else, err := g.GenElse(_if.elseBranch.MustGetValue())
+		if err != nil {
+			return "", err
+		}
+		output += _else
 	}
 
-	return output
+	return output, nil
 }
 
-func (g *Generator) GenElse(rawElse NodeElse) string {
+func (g *Generator) GenElse(rawElse NodeElse) (string, error) {
 	output := ""
 
 	switch _else := rawElse.variant.(type) {
 	case NodeElseScope:
-		output += g.GenScope(_else.scope)
+		scope, err := g.GenScope(_else.scope)
+		if err != nil {
+			return "", err
+		}
+		output += scope
 	case NodeElseElif:
-		output += g.GenIf(_else.ifStmt)
+		ifStmt, err := g.GenIf(_else.ifStmt)
+		if err != nil {
+			return "", err
+		}
+		output += ifStmt
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate else branch: %T", rawElse.variant))
 	}
-	return output
+	return output, nil
 
 }
 
@@ -303,4 +404,8 @@ func (g *Generator) createLabel(labelCtx ...string) string {
 type Variable struct {
 	name     string
 	stackLoc uint
+}
+
+func (g Generator) error(t Token, message string) error {
+	return fmt.Errorf("%s:%d:%d: %s", t.file, t.line, t.col, message)
 }

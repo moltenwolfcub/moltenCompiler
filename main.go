@@ -38,7 +38,11 @@ func main() {
 	}
 
 	generator := NewGenerator(root)
-	asm := generator.GenProg()
+	asm, err := generator.GenProg()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	err = writeToFile(strings.Split(os.Args[1], ".")[0], asm)
 	if err != nil {

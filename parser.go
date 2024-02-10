@@ -149,14 +149,14 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		if err != nil {
 			return NodeStmt{}, err
 		}
-		return NodeStmt{NodeStmtBreak{}}, nil
+		return NodeStmt{NodeStmtBreak{tok.MustGetValue()}}, nil
 
 	} else if tok := p.mustTryConsume(_continue); tok.HasValue() {
 		_, err := p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
 			return NodeStmt{}, err
 		}
-		return NodeStmt{NodeStmtContinue{}}, nil
+		return NodeStmt{NodeStmtContinue{tok.MustGetValue()}}, nil
 
 	} else {
 		return NodeStmt{}, errMissingStmt
@@ -438,11 +438,15 @@ type NodeStmtWhile struct {
 
 func (NodeStmtWhile) IsNodeStmt() {}
 
-type NodeStmtBreak struct{}
+type NodeStmtBreak struct {
+	_break Token
+}
 
 func (NodeStmtBreak) IsNodeStmt() {}
 
-type NodeStmtContinue struct{}
+type NodeStmtContinue struct {
+	_continue Token
+}
 
 func (NodeStmtContinue) IsNodeStmt() {}
 
