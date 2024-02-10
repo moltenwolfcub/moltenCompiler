@@ -5,18 +5,21 @@ $$
 	\\
 	[\textcolor{red}{stmt}] &\to \begin{cases}
 		\textcolor{cyan}{exit}([\textcolor{lime}{expr}]);\\
-		\textcolor{cyan}{var}\space\textcolor{yellow}{name};\\
-		\textcolor{yellow}{name}=[\textcolor{lime}{expr}];\\
+		\textcolor{cyan}{var}\space\textcolor{yellow}{varIdent};\\
+		\textcolor{yellow}{varIdent}=[\textcolor{lime}{expr}];\\
 		[\textcolor{lime}{scope}]\\
 		[\textcolor{lime}{if}]\\
 		\textcolor{cyan}{while}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
 		\textcolor{cyan}{break};\\
 		\textcolor{cyan}{continue};\\
+		\textcolor{cyan}{func}\space\textcolor{yellow}{funcIdent}[\textcolor{lime}{scope}]\\
+		\textcolor{yellow}{funcIdent};
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}
 		[\textcolor{lime}{term}]\\
 		[\textcolor{lime}{binExpr}]\\
+		[\textcolor{lime}{func}]\\
 	\end{cases}
 	\\
 	[\textcolor{red}{binExpr}] &\to \begin{cases}
@@ -28,7 +31,7 @@ $$
 	\\
 	[\textcolor{red}{term}] &\to \begin{cases}
 		\text{intLiteral}\\
-		\textcolor{yellow}{identifier}\\
+		\textcolor{yellow}{varIdent}\\
 		([\textcolor{lime}{expr}])\\
 	\end{cases}
 	\\
@@ -38,7 +41,7 @@ $$
 	[\textcolor{red}{else}] &\to \begin{cases}
 		[\textcolor{lime}{if}]\\
 		[\textcolor{lime}{scope}]\\
-	\end{cases}
+	\end{cases}\\
 
 \end{align}
 $$
