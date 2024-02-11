@@ -86,25 +86,41 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 
 		return node, nil
 	} else if tok := p.mustTryConsume(identifier); tok.HasValue() {
-		node := NodeStmtVarAssign{
-			ident: tok.MustGetValue(),
-		}
-		_, err := p.tryConsume(equals, "expected '=' after variable name for assignment")
-		if err != nil {
-			return nil, err
+		if !p.peek().HasValue() {
+			return nil, p.error("expected '=' or ';' after identifier for variable assignment or function call. didn't find any token.")
 		}
 
-		node.expr, err = p.ParseExpr()
-		if err != nil {
-			return nil, err
-		}
+		switch p.peek().MustGetValue().tokenType {
+		case equals:
+			p.consume()
 
-		_, err = p.tryConsume(semiColon, "missing ';'")
-		if err != nil {
-			return nil, err
-		}
+			node := NodeStmtVarAssign{
+				ident: tok.MustGetValue(),
+			}
 
-		return node, nil
+			expr, err := p.ParseExpr()
+			if err != nil {
+				return nil, err
+			}
+			node.expr = expr
+
+			_, err = p.tryConsume(semiColon, "missing ';'")
+			if err != nil {
+				return nil, err
+			}
+
+			return node, nil
+		case semiColon:
+			p.consume()
+
+			node := NodeStmtFunctionCall{
+				ident: tok.MustGetValue(),
+			}
+
+			return node, nil
+		default:
+			return nil, p.error("expected '=' or ';' after identifier for variable assignment or function call")
+		}
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == openCurlyBracket {
 		scope, err := p.ParseScope()
 		if err != nil {

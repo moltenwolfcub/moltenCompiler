@@ -5,10 +5,13 @@ import (
 )
 
 type Generator struct {
-	program       NodeProg
-	stackSize     uint
-	variables     []Variable
-	scopes        []int
+	program NodeProg
+
+	stackSize uint
+	variables []Variable
+	functions []Function
+	scopes    []int
+
 	labelCount    int
 	breakLabel    string
 	continueLabel string
@@ -16,10 +19,13 @@ type Generator struct {
 
 func NewGenerator(prog NodeProg) Generator {
 	return Generator{
-		program:       prog,
-		stackSize:     0,
-		variables:     []Variable{},
-		scopes:        []int{},
+		program: prog,
+
+		stackSize: 0,
+		variables: []Variable{},
+		functions: []Function{},
+		scopes:    []int{},
+
 		labelCount:    0,
 		breakLabel:    "nil",
 		continueLabel: "nil",
@@ -74,7 +80,15 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 	output := ""
 
 	functionName := stmt.ident.value.MustGetValue()
-	output += "_" + functionName + ":\n"
+
+	for _, f := range g.functions {
+		if f.name == functionName {
+			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("function identifier already used: %v", functionName))
+		}
+	}
+	g.functions = append(g.functions, Function{name: functionName})
+
+	output += functionName + ":\n"
 
 	body, err := g.GenScope(stmt.body)
 	if err != nil {
@@ -103,16 +117,12 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 	case NodeStmtVarDeclare:
 		variableName := stmt.ident.value.MustGetValue()
 
-		exists := false
 		for _, v := range g.variables {
 			if v.name == variableName {
-				exists = true
+				return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("variable identifier already used: %v", variableName))
 			}
 		}
 
-		if exists {
-			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("identifier already used: %v", variableName))
-		}
 		g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: variableName})
 		output += "\tmov rax, 0\n" //set a default starting value
 		output += g.push("rax")
@@ -125,10 +135,11 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			if v.name == variableName {
 				variable = v
 				exists = true
+				break
 			}
 		}
 		if !exists {
-			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("variables must be declared before assignment. '%s' is undefined", variableName))
+			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined variable: '%s'", variableName))
 		}
 
 		expr, err := g.GenExpr(stmt.expr)
@@ -197,7 +208,29 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		output += "\tjmp " + g.continueLabel + "\n"
 
 	case NodeStmtFunctionDefinition:
-		fmt.Printf("Function %s should already be generated\n", stmt.ident.value.MustGetValue())
+		/*
+			functions are generated before other statements
+			so they are in the correct order.
+
+			this is just here to keep the type switch happy.
+		*/
+
+	case NodeStmtFunctionCall:
+		functionName := stmt.ident.value.MustGetValue()
+		var function Function
+		exists := false
+		for _, f := range g.functions {
+			if f.name == functionName {
+				function = f
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined function: '%s'", functionName))
+		}
+
+		output += "\tcall " + function.name + "\n"
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt))
@@ -321,7 +354,7 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 		}
 
 		if !exists {
-			return "", term.identifier.lineInfo.PositionedError(fmt.Sprintf("unknown identifier: %v", variableName))
+			return "", term.identifier.lineInfo.PositionedError(fmt.Sprintf("undefined variable: %v", variableName))
 		}
 
 		output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
@@ -449,4 +482,8 @@ func (g *Generator) createLabel(labelCtx ...string) string {
 type Variable struct {
 	name     string
 	stackLoc uint
+}
+
+type Function struct {
+	name string
 }

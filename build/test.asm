@@ -1,7 +1,7 @@
 global _start
 
 
-_f_3:
+ex:
 	mov rax, 69
 	push rax
 	mov rax, 60
@@ -197,6 +197,8 @@ label7_endWhile:
 	add rsp, 8
 	jmp label4_startWhile
 label5_endWhile:
+
+	call ex
 
 	push QWORD [rsp + 8]
 	pop rax
