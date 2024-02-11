@@ -48,6 +48,8 @@ while (w) {
 	}
 }
 
+//f_3;
+
 if (v) {
 	exit(v);
 } else if (v-10) {
@@ -59,3 +61,7 @@ if (v) {
 /* bigger comment 
 multiple lines are supported!
 */
+
+func f_3 {
+	exit(69);
+}

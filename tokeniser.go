@@ -29,6 +29,7 @@ const (
 	_else
 	_break
 	_continue
+	_func
 )
 
 func (t TokenType) GetBinPrec() opt.Optional[int] {
@@ -186,6 +187,10 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 				buf = []rune{}
 			} else if string(buf) == "continue" {
 				tokens = append(tokens, Token{tokenType: _continue, lineInfo: t.currentLineInfo})
+				t.currentLineInfo.IncWord(buf)
+				buf = []rune{}
+			} else if string(buf) == "func" {
+				tokens = append(tokens, Token{tokenType: _func, lineInfo: t.currentLineInfo})
 				t.currentLineInfo.IncWord(buf)
 				buf = []rune{}
 			} else {

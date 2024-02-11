@@ -27,7 +27,15 @@ func NewGenerator(prog NodeProg) Generator {
 }
 
 func (g *Generator) GenProg() (string, error) {
-	output := "global _start\n_start:\n"
+	output := "global _start\n\n\n"
+
+	pre, err := g.PreGenerate()
+	if err != nil {
+		return "", err
+	}
+	output += pre
+
+	output += "_start:\n"
 
 	for _, stmt := range g.program.stmts {
 		generated, err := g.GenStmt(stmt)
@@ -41,6 +49,40 @@ func (g *Generator) GenProg() (string, error) {
 	output += "\tmov rax, 60\n"
 	output += "\tmov rdi, 0\n"
 	output += "\tsyscall\n"
+
+	return output, nil
+}
+
+func (g *Generator) PreGenerate() (string, error) {
+	output := ""
+
+	for _, stmt := range g.program.stmts {
+		funcStmt, ok := stmt.(NodeStmtFunctionDefinition)
+		if !ok {
+			continue
+		}
+		generated, err := g.GenFuncDefinition(funcStmt)
+		if err != nil {
+			return "", err
+		}
+		output += generated + "\n\n"
+	}
+	return output, nil
+}
+
+func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, error) {
+	output := ""
+
+	functionName := stmt.ident.value.MustGetValue()
+	output += "_" + functionName + ":\n"
+
+	body, err := g.GenScope(stmt.body)
+	if err != nil {
+		return "", err
+	}
+	output += body
+
+	output += "\tret\n"
 
 	return output, nil
 }
@@ -153,6 +195,9 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			return "", stmt._continue.lineInfo.PositionedError("can't continue when not in a loop")
 		}
 		output += "\tjmp " + g.continueLabel + "\n"
+
+	case NodeStmtFunctionDefinition:
+		fmt.Printf("Function %s should already be generated\n", stmt.ident.value.MustGetValue())
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt))

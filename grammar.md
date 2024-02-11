@@ -19,7 +19,6 @@ $$
 	[\textcolor{red}{expr}] &\to \begin{cases}
 		[\textcolor{lime}{term}]\\
 		[\textcolor{lime}{binExpr}]\\
-		[\textcolor{lime}{func}]\\
 	\end{cases}
 	\\
 	[\textcolor{red}{binExpr}] &\to \begin{cases}

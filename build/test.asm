@@ -1,4 +1,16 @@
 global _start
+
+
+_f_3:
+	mov rax, 69
+	push rax
+	mov rax, 60
+	pop rdi
+	syscall
+	add rsp, 0
+	ret
+
+
 _start:
 	mov rax, 0
 	push rax
@@ -236,6 +248,7 @@ label10_else:
 	pop rdi
 	syscall
 	add rsp, 0
+
 
 	mov rax, 60
 	mov rdi, 0

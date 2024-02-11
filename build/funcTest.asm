@@ -13,7 +13,7 @@ _start:
 	add rsp, 8		;RESET STACK
 					;RAX contains return
 
-	mov rbx, 50
+	mov rbx, rax
 	push rbx
 	call set
 	add rsp, 8

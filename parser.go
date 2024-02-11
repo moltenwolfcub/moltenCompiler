@@ -157,6 +157,22 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		}
 		return NodeStmtContinue{tok.MustGetValue()}, nil
 
+	} else if tok := p.mustTryConsume(_func); tok.HasValue() {
+		node := NodeStmtFunctionDefinition{}
+
+		ident, err := p.tryConsume(identifier, "expected function identifier after `func`")
+		if err != nil {
+			return nil, err
+		}
+		node.ident = ident
+
+		scope, err := p.ParseScope()
+		if err != nil {
+			return nil, err
+		}
+		node.body = scope
+
+		return node, nil
 	} else {
 		return nil, errMissingStmt
 	}
@@ -444,6 +460,19 @@ type NodeStmtContinue struct {
 }
 
 func (NodeStmtContinue) IsNodeStmt() {}
+
+type NodeStmtFunctionDefinition struct {
+	ident Token
+	body  NodeScope
+}
+
+func (NodeStmtFunctionDefinition) IsNodeStmt() {}
+
+type NodeStmtFunctionCall struct {
+	ident Token
+}
+
+func (NodeStmtFunctionCall) IsNodeStmt() {}
 
 type NodeExpr interface {
 	IsNodeExpr()
