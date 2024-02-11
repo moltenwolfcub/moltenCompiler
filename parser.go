@@ -87,7 +87,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		return node, nil
 	} else if tok := p.mustTryConsume(identifier); tok.HasValue() {
 		if !p.peek().HasValue() {
-			return nil, p.error("expected '=' or ';' after identifier for variable assignment or function call. didn't find any token.")
+			return nil, errors.New("expected '=' or ';' after identifier for variable assignment or function call. didn't find any token")
 		}
 
 		switch p.peek().MustGetValue().tokenType {
@@ -119,7 +119,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 
 			return node, nil
 		default:
-			return nil, p.error("expected '=' or ';' after identifier for variable assignment or function call")
+			return nil, errors.New("expected '=' or ';' after identifier for variable assignment or function call")
 		}
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == openCurlyBracket {
 		scope, err := p.ParseScope()
