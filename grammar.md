@@ -13,7 +13,8 @@ $$
 		\textcolor{cyan}{break};\\
 		\textcolor{cyan}{continue};\\
 		\textcolor{cyan}{func}\space\textcolor{yellow}{funcIdent}[\textcolor{lime}{scope}]\\
-		\textcolor{yellow}{funcIdent};
+		\textcolor{yellow}{funcIdent};\\
+		\textcolor{cyan}{return}\space[\textcolor{lime}{expr}];\\
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}
@@ -49,8 +50,18 @@ $$
 ### Tmp:
 
 #### Variable syntax
-access var name type;\
-private var score int;\
+```
+access var name type;
+private var score int;
 score = 5;
 
 score := 5 (assume private when using :=)
+```
+
+#### Function syntax
+```
+func modifiers <generics> Tr1, Tr2 f(a, b) {}
+func public const <T implements Comparable> (T, int, error) num(T trait, string name) {
+	return 22;
+}
+```

@@ -1,6 +1,14 @@
 global _start
 
 
+num:
+	mov rax, 22
+	push rax
+	ret
+	add rsp, 0
+	ret
+
+
 ex:
 	mov rax, 69
 	push rax
@@ -198,58 +206,9 @@ label7_endWhile:
 	jmp label4_startWhile
 label5_endWhile:
 
-	call ex
+	call num
+	pop rax
 
-	push QWORD [rsp + 8]
-	pop rax
-	test rax, rax
-	jz label9_else
-	push QWORD [rsp + 8]
-	mov rax, 60
-	pop rdi
-	syscall
-	add rsp, 0
-label9_else:
-	push QWORD [rsp + 8]
-	mov rax, 10
-	push rax
-	pop rbx
-	pop rax
-	sub rax, rbx
-	push rax
-	pop rax
-	test rax, rax
-	jz label10_else
-	push QWORD [rsp + 16]
-	mov rax, 4
-	push rax
-	pop rbx
-	pop rax
-	div rbx
-	push rax
-	mov rax, 2
-	push rax
-	mov rax, 4
-	push rax
-	pop rbx
-	pop rax
-	add rax, rbx
-	push rax
-	pop rbx
-	pop rax
-	mul rbx
-	push rax
-	mov rax, 60
-	pop rdi
-	syscall
-	add rsp, 0
-label10_else:
-	mov rax, 4
-	push rax
-	mov rax, 60
-	pop rdi
-	syscall
-	add rsp, 0
 
 
 	mov rax, 60

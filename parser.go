@@ -135,7 +135,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		}
 		return ifStmt, nil
 
-	} else if tok := p.mustTryConsume(while); tok.HasValue() {
+	} else if p.mustTryConsume(while).HasValue() {
 		node := NodeStmtWhile{}
 
 		_, err := p.tryConsume(openRoundBracket, "Expected '('")
@@ -173,7 +173,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		}
 		return NodeStmtContinue{tok.MustGetValue()}, nil
 
-	} else if tok := p.mustTryConsume(_func); tok.HasValue() {
+	} else if p.mustTryConsume(_func).HasValue() {
 		node := NodeStmtFunctionDefinition{}
 
 		ident, err := p.tryConsume(identifier, "expected function identifier after `func`")
@@ -187,6 +187,21 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			return nil, err
 		}
 		node.body = scope
+
+		return node, nil
+	} else if tok := p.mustTryConsume(_return); tok.HasValue() {
+		node := NodeStmtReturn{_return: tok.MustGetValue()}
+
+		expr, err := p.ParseExpr()
+		if err != nil {
+			return nil, err
+		}
+		node.expr = expr
+
+		_, err = p.tryConsume(semiColon, "missing ';'")
+		if err != nil {
+			return nil, err
+		}
 
 		return node, nil
 	} else {
@@ -489,6 +504,13 @@ type NodeStmtFunctionCall struct {
 }
 
 func (NodeStmtFunctionCall) IsNodeStmt() {}
+
+type NodeStmtReturn struct {
+	expr    NodeExpr
+	_return Token
+}
+
+func (NodeStmtReturn) IsNodeStmt() {}
 
 type NodeExpr interface {
 	IsNodeExpr()

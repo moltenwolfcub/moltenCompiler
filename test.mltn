@@ -48,8 +48,13 @@ while (w) {
 	}
 }
 
-ex;
+//var ret;
+num;
+//ret = num;
 
+//ex;
+
+/*
 if (v) {
 	exit(v);
 } else if (v-10) {
@@ -57,10 +62,15 @@ if (v) {
 } else {
 	exit(4);
 }
+*/
 
 /* bigger comment 
 multiple lines are supported!
 */
+
+func num {
+	return 22;
+}
 
 func ex {
 	exit(69);
