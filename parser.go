@@ -110,8 +110,18 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			}
 
 			return node, nil
-		case semiColon:
+		case openRoundBracket:
 			p.consume()
+
+			_, err := p.tryConsume(closeRoundBracket, "missing ')'")
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = p.tryConsume(semiColon, "missing ';'")
+			if err != nil {
+				return nil, err
+			}
 
 			node := NodeStmtFunctionCall{
 				ident: tok.MustGetValue(),
@@ -119,7 +129,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 
 			return node, nil
 		default:
-			return nil, errors.New("expected '=' or ';' after identifier for variable assignment or function call")
+			return nil, errors.New("expected '=' or '()' after identifier for variable assignment or function call")
 		}
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == openCurlyBracket {
 		scope, err := p.ParseScope()
@@ -181,6 +191,16 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			return nil, err
 		}
 		node.ident = ident
+
+		_, err = p.tryConsume(openRoundBracket, "missing '('")
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = p.tryConsume(closeRoundBracket, "missing ')'")
+		if err != nil {
+			return nil, err
+		}
 
 		scope, err := p.ParseScope()
 		if err != nil {
