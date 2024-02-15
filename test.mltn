@@ -48,6 +48,8 @@ while (w) {
 	}
 }
 
+leave(6, 4);
+
 ex();
 
 if (v) {
@@ -64,4 +66,8 @@ multiple lines are supported!
 
 func ex() {
 	exit(69);
+}
+
+func leave(code, offset) {
+	exit(code + offset);
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 )
 
 type Generator struct {
@@ -90,7 +91,15 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 
 	output += functionName + ":\n"
 
-	body, err := g.GenScope(stmt.body)
+	parameters := []Variable{}
+	for _, p := range stmt.params {
+		v := Variable{
+			name: p.value.MustGetValue(),
+		}
+		parameters = append(parameters, v)
+	}
+
+	body, err := g.GenScopeWithParams(stmt.body, parameters)
 	if err != nil {
 		return "", err
 	}
@@ -228,6 +237,16 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		}
 		if !exists {
 			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined function: '%s'", functionName))
+		}
+
+		reversed := stmt.params
+		slices.Reverse(reversed)
+		for _, p := range reversed {
+			expr, err := g.GenExpr(p)
+			if err != nil {
+				return "", err
+			}
+			output += expr
 		}
 
 		output += "\tcall " + function.name + "\n"
@@ -375,6 +394,35 @@ func (g *Generator) GenScope(scope NodeScope) (string, error) {
 	output := ""
 
 	output += g.beginScope()
+
+	for _, stmt := range scope.stmts {
+		generated, err := g.GenStmt(stmt)
+		if err != nil {
+			return "", err
+		}
+		output += generated
+	}
+
+	output += g.endScope()
+
+	return output, nil
+}
+
+func (g *Generator) GenScopeWithParams(scope NodeScope, params []Variable) (string, error) {
+	output := ""
+
+	output += g.beginScope()
+
+	for i, p := range params {
+		g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: p.name})
+
+		stackOffset := 8 + (i)*16
+		/*	start at offset 8 and jump by 16 to account for the other parameters
+			that have just been pushed to the stack.
+		*/
+		output += fmt.Sprintf("\tmov rax, QWORD [rsp + %v]\n", stackOffset)
+		output += g.push("rax")
+	}
 
 	for _, stmt := range scope.stmts {
 		generated, err := g.GenStmt(stmt)

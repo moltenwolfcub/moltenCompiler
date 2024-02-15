@@ -113,6 +113,25 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		case openRoundBracket:
 			p.consume()
 
+			node := NodeStmtFunctionCall{
+				ident: tok.MustGetValue(),
+			}
+
+			for {
+				expr, err := p.ParseExpr()
+				if err == errMissingExpr {
+					break
+				} else if err != nil {
+					return nil, err
+				}
+				node.params = append(node.params, expr)
+
+				_, err = p.tryConsume(comma, "optional so this should never error")
+				if err != nil {
+					break
+				}
+			}
+
 			_, err := p.tryConsume(closeRoundBracket, "missing ')'")
 			if err != nil {
 				return nil, err
@@ -121,10 +140,6 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			_, err = p.tryConsume(semiColon, "missing ';'")
 			if err != nil {
 				return nil, err
-			}
-
-			node := NodeStmtFunctionCall{
-				ident: tok.MustGetValue(),
 			}
 
 			return node, nil
@@ -195,6 +210,19 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		_, err = p.tryConsume(openRoundBracket, "missing '('")
 		if err != nil {
 			return nil, err
+		}
+
+		for {
+			ident, err := p.tryConsume(identifier, "optional so this should never error")
+			if err != nil {
+				break
+			}
+			node.params = append(node.params, ident)
+
+			_, err = p.tryConsume(comma, "optional so this should never error")
+			if err != nil {
+				break
+			}
 		}
 
 		_, err = p.tryConsume(closeRoundBracket, "missing ')'")
@@ -498,14 +526,16 @@ type NodeStmtContinue struct {
 func (NodeStmtContinue) IsNodeStmt() {}
 
 type NodeStmtFunctionDefinition struct {
-	ident Token
-	body  NodeScope
+	ident  Token
+	params []Token
+	body   NodeScope
 }
 
 func (NodeStmtFunctionDefinition) IsNodeStmt() {}
 
 type NodeStmtFunctionCall struct {
-	ident Token
+	ident  Token
+	params []NodeExpr
 }
 
 func (NodeStmtFunctionCall) IsNodeStmt() {}
