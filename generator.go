@@ -16,6 +16,8 @@ type Generator struct {
 	labelCount    int
 	breakLabel    string
 	continueLabel string
+
+	genASMComments bool
 }
 
 func NewGenerator(prog NodeProg) Generator {
@@ -30,6 +32,8 @@ func NewGenerator(prog NodeProg) Generator {
 		labelCount:    0,
 		breakLabel:    "nil",
 		continueLabel: "nil",
+
+		genASMComments: true,
 	}
 }
 
@@ -400,7 +404,7 @@ func (g *Generator) GenScope(scope NodeScope) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		output += generated
+		output += generated + "\n"
 	}
 
 	output += g.endScope()
@@ -413,23 +417,37 @@ func (g *Generator) GenScopeWithParams(scope NodeScope, params []Variable) (stri
 
 	output += g.beginScope()
 
+	if len(params) > 0 && g.genASMComments {
+		output += "\t;=====PARAMETERS=====\n"
+	}
 	for i, p := range params {
 		g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: p.name})
 
 		stackOffset := 8 + (i)*16
+
+		if g.genASMComments {
+			output += "\t;" + p.name + "\n"
+		}
 		/*	start at offset 8 and jump by 16 to account for the other parameters
 			that have just been pushed to the stack.
 		*/
 		output += fmt.Sprintf("\tmov rax, QWORD [rsp + %v]\n", stackOffset)
 		output += g.push("rax")
+		output += "\n"
+	}
+	if len(params) > 0 {
+		output += "\n"
 	}
 
+	if g.genASMComments {
+		output += "\t;=====FUNCTION BODY=====\n"
+	}
 	for _, stmt := range scope.stmts {
 		generated, err := g.GenStmt(stmt)
 		if err != nil {
 			return "", err
 		}
-		output += generated
+		output += generated + "\n"
 	}
 
 	output += g.endScope()

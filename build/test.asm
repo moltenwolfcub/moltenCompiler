@@ -2,22 +2,29 @@ global _start
 
 
 ex:
-
+	;=====FUNCTION BODY=====
 	mov rax, 69
 	push rax
 	mov rax, 60
 	pop rdi
 	syscall
+
 	add rsp, 0
 	ret
 
 
 leave:
+	;=====PARAMETERS=====
+	;code
 	mov rax, QWORD [rsp + 8]
 	push rax
+
+	;offset
 	mov rax, QWORD [rsp + 24]
 	push rax
 
+
+	;=====FUNCTION BODY=====
 	push QWORD [rsp + 8]
 	push QWORD [rsp + 8]
 	pop rbx
@@ -27,6 +34,7 @@ leave:
 	mov rax, 60
 	pop rdi
 	syscall
+
 	add rsp, 16
 	ret
 
@@ -67,16 +75,20 @@ _start:
 
 	mov rax, 0
 	push rax
+
 	mov rax, 6
 	push rax
 	pop rax
 	mov QWORD [rsp + 0], rax
+
 	mov rax, 0
 	push rax
+
 	mov rax, 7
 	push rax
 	pop rax
 	mov QWORD [rsp + 0], rax
+
 	mov rax, 2
 	push rax
 	push QWORD [rsp + 8]
@@ -86,7 +98,9 @@ _start:
 	push rax
 	pop rax
 	mov QWORD [rsp + 8], rax
+
 	add rsp, 8
+
 	push QWORD [rsp + 8]
 	push QWORD [rsp + 8]
 	pop rbx
@@ -95,6 +109,7 @@ _start:
 	push rax
 	pop rax
 	mov QWORD [rsp + 8], rax
+
 	add rsp, 8
 
 	mov rax, 0
@@ -133,6 +148,7 @@ label1_startWhile:
 	push rax
 	pop rax
 	mov QWORD [rsp + 0], rax
+
 	push QWORD [rsp + 0]
 	mov rax, 10
 	push rax
@@ -144,9 +160,12 @@ label1_startWhile:
 	test rax, rax
 	jz label3_else
 	jmp label1_startWhile
+
 	add rsp, 0
 label3_else:
+
 	jmp label2_endWhile
+
 	add rsp, 0
 	jmp label1_startWhile
 label2_endWhile:
@@ -173,12 +192,15 @@ label4_startWhile:
 	push rax
 	pop rax
 	mov QWORD [rsp + 0], rax
+
 	mov rax, 0
 	push rax
+
 	mov rax, 2
 	push rax
 	pop rax
 	mov QWORD [rsp + 0], rax
+
 label6_startWhile:
 	mov rax, 1
 	push rax
@@ -194,6 +216,7 @@ label6_startWhile:
 	push rax
 	pop rax
 	mov QWORD [rsp + 8], rax
+
 	push QWORD [rsp + 0]
 	mov rax, 1
 	push rax
@@ -203,17 +226,22 @@ label6_startWhile:
 	push rax
 	pop rax
 	mov QWORD [rsp + 0], rax
+
 	push QWORD [rsp + 0]
 	pop rax
 	test rax, rax
 	jz label8_else
 	jmp label6_startWhile
+
 	add rsp, 0
 label8_else:
+
 	jmp label7_endWhile
+
 	add rsp, 0
 	jmp label6_startWhile
 label7_endWhile:
+
 	add rsp, 8
 	jmp label4_startWhile
 label5_endWhile:
@@ -234,6 +262,7 @@ label5_endWhile:
 	mov rax, 60
 	pop rdi
 	syscall
+
 	add rsp, 0
 label9_else:
 	push QWORD [rsp + 24]
@@ -268,6 +297,7 @@ label9_else:
 	mov rax, 60
 	pop rdi
 	syscall
+
 	add rsp, 0
 label10_else:
 	mov rax, 4
@@ -275,6 +305,7 @@ label10_else:
 	mov rax, 60
 	pop rdi
 	syscall
+
 	add rsp, 0
 
 
