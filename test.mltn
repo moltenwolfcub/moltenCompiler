@@ -48,6 +48,8 @@ while (w) {
 	}
 }
 
+dummy(5);
+
 leave(6, 4);
 
 ex();
@@ -70,4 +72,7 @@ func ex() {
 
 func leave(code, offset) {
 	exit(code + offset);
+}
+
+func dummy(param1) {
 }

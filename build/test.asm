@@ -39,6 +39,18 @@ leave:
 	ret
 
 
+dummy:
+	;=====PARAMETERS=====
+	;param1
+	mov rax, QWORD [rsp + 8]
+	push rax
+
+
+	;=====FUNCTION BODY=====
+	add rsp, 8
+	ret
+
+
 _start:
 	mov rax, 0
 	push rax
@@ -246,26 +258,33 @@ label7_endWhile:
 	jmp label4_startWhile
 label5_endWhile:
 
+	mov rax, 5
+	push rax
+	call dummy
+	add rsp, 8
+
 	mov rax, 4
 	push rax
 	mov rax, 6
 	push rax
 	call leave
+	add rsp, 16
 
 	call ex
+	add rsp, 0
 
-	push QWORD [rsp + 24]
+	push QWORD [rsp + 32]
 	pop rax
 	test rax, rax
 	jz label9_else
-	push QWORD [rsp + 24]
+	push QWORD [rsp + 32]
 	mov rax, 60
 	pop rdi
 	syscall
 
 	add rsp, 0
 label9_else:
-	push QWORD [rsp + 24]
+	push QWORD [rsp + 32]
 	mov rax, 10
 	push rax
 	pop rbx
@@ -275,7 +294,7 @@ label9_else:
 	pop rax
 	test rax, rax
 	jz label10_else
-	push QWORD [rsp + 32]
+	push QWORD [rsp + 40]
 	mov rax, 4
 	push rax
 	pop rbx
@@ -307,6 +326,7 @@ label10_else:
 	syscall
 
 	add rsp, 0
+
 
 
 

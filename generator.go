@@ -254,6 +254,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		}
 
 		output += "\tcall " + function.name + "\n"
+		output += "\tadd rsp, " + fmt.Sprintf("%d", len(stmt.params)*8) + "\n"
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt))
