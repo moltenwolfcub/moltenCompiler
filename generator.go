@@ -298,7 +298,9 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	var function Function
 	exists := false
 	foundWrong := false
-	for _, f := range g.functions {
+
+	allFunctions := append(g.functions, g.currentFunction)
+	for _, f := range allFunctions {
 		if f.name == functionName {
 			if len(stmt.params) == f.parameters {
 				function = f
@@ -512,27 +514,6 @@ func (g *Generator) GenScopeWithParams(scope NodeScope, params []Variable) (stri
 	output += g.beginScope()
 
 	g.variables = append(g.variables, params...)
-	// if len(params) > 0 && g.genASMComments {
-	// 	output += "\t;=====PARAMETERS=====\n"
-	// }
-	// for i, p := range params {
-	// 	g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: p.name})
-
-	// 	stackOffset := 8 + (i)*16
-
-	// 	if g.genASMComments {
-	// 		output += "\t;" + p.name + "\n"
-	// 	}
-	// 	/*	start at offset 8 and jump by 16 to account for the other parameters
-	// 		that have just been pushed to the stack.
-	// 	*/
-	// 	output += fmt.Sprintf("\tmov rax, QWORD [rsp + %v]\n", stackOffset)
-	// 	output += g.push("rax")
-	// 	output += "\n"
-	// }
-	// if len(params) > 0 {
-	// 	output += "\n"
-	// }
 
 	if g.genASMComments {
 		output += "\t;=====FUNCTION BODY=====\n"
