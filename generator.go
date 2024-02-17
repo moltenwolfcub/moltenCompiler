@@ -99,10 +99,15 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 
 	output += functionName + ":\n"
 
+	output += g.push("rbp")
+	output += "\tmov rbp, rsp\n\n"
+
 	parameters := []Variable{}
-	for _, p := range stmt.params {
+	for i, p := range stmt.params {
 		v := Variable{
-			name: p.value.MustGetValue(),
+			isParameter: true,
+			name:        p.value.MustGetValue(),
+			stackLoc:    uint(i + 2),
 		}
 		parameters = append(parameters, v)
 	}
@@ -112,6 +117,8 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 		return "", err
 	}
 	output += body
+
+	output += g.pop("rbp")
 
 	output += "\tret\n"
 
@@ -244,10 +251,8 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		}
 		output += funcCall
 
-		// get rid of the 1 return value as we're not storing it
-		if retCount == 1 {
-			output += g.pop("rax")
-		}
+		// get rid of the return values as we're not storing them
+		output += "\tadd rsp, " + fmt.Sprintf("%d", retCount*8) + "\n"
 
 	case NodeStmtReturn:
 		if !g.inFunc {
@@ -287,6 +292,10 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 		return "", 0, stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined function: '%s'", functionName))
 	}
 
+	for i := 0; i < function.returnCount; i++ {
+		output += g.push("0")
+	}
+
 	reversed := stmt.params
 	slices.Reverse(reversed)
 	for _, p := range reversed {
@@ -298,6 +307,7 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	}
 
 	output += "\tcall " + function.name + "\n"
+
 	output += "\tadd rsp, " + fmt.Sprintf("%d", len(stmt.params)*8) + "\n"
 
 	g.stackSize += uint(function.returnCount)
@@ -424,7 +434,11 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 			return "", term.identifier.lineInfo.PositionedError(fmt.Sprintf("undefined variable: %v", variableName))
 		}
 
-		output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
+		if variable.isParameter {
+			output += g.push(fmt.Sprintf("QWORD [rbp + %v]", variable.stackLoc*8))
+		} else {
+			output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
+		}
 
 	case NodeFunctionCall:
 		funcCall, retCount, err := g.GenFuncCall(term)
@@ -433,7 +447,7 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 		}
 
 		if retCount != 1 {
-			term.ident.lineInfo.PositionedError("function doesn't return any values so can't be used as a term")
+			term.ident.lineInfo.PositionedError("function doesn't return any values (or more than 1 atm) so can't be used as a term")
 		}
 
 		output += funcCall
@@ -473,27 +487,28 @@ func (g *Generator) GenScopeWithParams(scope NodeScope, params []Variable) (stri
 
 	output += g.beginScope()
 
-	if len(params) > 0 && g.genASMComments {
-		output += "\t;=====PARAMETERS=====\n"
-	}
-	for i, p := range params {
-		g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: p.name})
+	g.variables = append(g.variables, params...)
+	// if len(params) > 0 && g.genASMComments {
+	// 	output += "\t;=====PARAMETERS=====\n"
+	// }
+	// for i, p := range params {
+	// 	g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: p.name})
 
-		stackOffset := 8 + (i)*16
+	// 	stackOffset := 8 + (i)*16
 
-		if g.genASMComments {
-			output += "\t;" + p.name + "\n"
-		}
-		/*	start at offset 8 and jump by 16 to account for the other parameters
-			that have just been pushed to the stack.
-		*/
-		output += fmt.Sprintf("\tmov rax, QWORD [rsp + %v]\n", stackOffset)
-		output += g.push("rax")
-		output += "\n"
-	}
-	if len(params) > 0 {
-		output += "\n"
-	}
+	// 	if g.genASMComments {
+	// 		output += "\t;" + p.name + "\n"
+	// 	}
+	// 	/*	start at offset 8 and jump by 16 to account for the other parameters
+	// 		that have just been pushed to the stack.
+	// 	*/
+	// 	output += fmt.Sprintf("\tmov rax, QWORD [rsp + %v]\n", stackOffset)
+	// 	output += g.push("rax")
+	// 	output += "\n"
+	// }
+	// if len(params) > 0 {
+	// 	output += "\n"
+	// }
 
 	if g.genASMComments {
 		output += "\t;=====FUNCTION BODY=====\n"
@@ -604,6 +619,8 @@ func (g *Generator) createLabel(labelCtx ...string) string {
 type Variable struct {
 	name     string
 	stackLoc uint
+
+	isParameter bool
 }
 
 type Function struct {

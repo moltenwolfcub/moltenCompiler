@@ -1,30 +1,35 @@
 global _start
 
 
-num:
-	;=====FUNCTION BODY=====
-	mov rax, 22
-	push rax
-	ret
+leave:
+	push rbp
+	mov rbp, rsp
 
-	add rsp, 0
+	;=====FUNCTION BODY=====
+	push QWORD [rbp + 16]
+	push QWORD [rbp + 24]
+	pop rbx
+	pop rax
+	add rax, rbx
+	push rax
+	mov rax, 60
+	pop rdi
+	syscall
+
+	add rsp, 16
+	pop rbp
 	ret
 
 
 _start:
 
-	mov rax, 0
+	mov rax, 4
 	push rax
-
-	call num
+	mov rax, 32
+	push rax
+	call leave
+	add rsp, 16
 	add rsp, 0
-	pop rax
-	mov QWORD [rsp + 0], rax
-
-	push QWORD [rsp + 0]
-	mov rax, 60
-	pop rdi
-	syscall
 
 	mov rax, 60
 	mov rdi, 0

@@ -48,18 +48,18 @@ while (w) {
 	}
 }
 
-dummy(5);
+//dummy(5);
 
 // var test; test = 7;
 // exit(test);
 
-leave(6, 4);
+leave(6, 14);
 
 //ex();
 
-var retTest;
-retTest = num();
-exit(retTest);
+//var retTest;
+//retTest = num();
+//exit(retTest);
 
 /*
 if (v) {
