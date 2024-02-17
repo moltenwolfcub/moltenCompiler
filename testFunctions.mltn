@@ -5,6 +5,9 @@ func 1 num() {
 func 0 leave(a, b) {
 	exit(a+b);
 }
+func 0 leave(a, b, c) {
+	exit(a+b+c);
+}
 
 func 3 test() {
 	return 6, 7, 8;
@@ -13,3 +16,4 @@ func 3 test() {
 test();
 
 leave(num(),4);
+leave(3, 4, 5);

@@ -97,13 +97,13 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 	}
 
 	for _, f := range g.functions {
-		if f.name == functionName {
+		if f.name == functionName && f.returnCount == len(stmt.returns) {
 			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("function identifier already used: %v", functionName))
 		}
 	}
 	g.currentFunction = Function{name: functionName, parameters: len(stmt.params), returnCount: returnCount}
 
-	output += functionName + ":\n"
+	output += fmt.Sprintf("%s_%d:\n", functionName, len(stmt.params))
 
 	output += g.push("rbp")
 	output += "\tmov rbp, rsp\n\n"
@@ -265,6 +265,10 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			return "", stmt._return.lineInfo.PositionedError("can only return when in a function")
 		}
 
+		if len(stmt.returns) != g.currentFunction.returnCount {
+			return "", stmt._return.lineInfo.PositionedError(fmt.Sprintf("incorrect number of values returned. Expected %v, Found %v", g.currentFunction.returnCount, len(stmt.returns)))
+		}
+
 		for i, expr := range stmt.returns {
 			expr, err := g.GenExpr(expr)
 			if err != nil {
@@ -299,6 +303,7 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 			if len(stmt.params) == f.parameters {
 				function = f
 				exists = true
+				foundWrong = false
 				break
 			}
 			foundWrong = true
@@ -325,7 +330,7 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 		output += expr
 	}
 
-	output += "\tcall " + function.name + "\n"
+	output += fmt.Sprintf("\tcall %s_%d\n", function.name, function.parameters)
 
 	output += "\tadd rsp, " + fmt.Sprintf("%d", len(stmt.params)*8) + "\n"
 
@@ -466,7 +471,7 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 		}
 
 		if retCount != 1 {
-			term.ident.lineInfo.PositionedError("function doesn't return any values (or more than 1 atm) so can't be used as a term")
+			return "", term.ident.lineInfo.PositionedError("function doesn't return any values (or more than 1 atm) so can't be used as a term")
 		}
 
 		output += funcCall
