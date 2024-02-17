@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"slices"
+	"strconv"
 )
 
 type Generator struct {
@@ -90,12 +91,17 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 
 	functionName := stmt.ident.value.MustGetValue()
 
+	returnCount, err := strconv.Atoi(stmt.returns)
+	if err != nil {
+		return "", err
+	}
+
 	for _, f := range g.functions {
 		if f.name == functionName {
 			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("function identifier already used: %v", functionName))
 		}
 	}
-	g.currentFunction = Function{name: functionName, parameters: len(stmt.params)}
+	g.currentFunction = Function{name: functionName, parameters: len(stmt.params), returnCount: returnCount}
 
 	output += functionName + ":\n"
 
@@ -259,17 +265,17 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			return "", stmt._return.lineInfo.PositionedError("can only return when in a function")
 		}
 
-		g.currentFunction.returnCount = 1
+		for i, expr := range stmt.returns {
+			expr, err := g.GenExpr(expr)
+			if err != nil {
+				return "", err
+			}
+			output += expr
 
-		expr, err := g.GenExpr(stmt.expr)
-		if err != nil {
-			return "", err
+			stackOffset := (g.currentFunction.parameters + i + 2) * 8
+
+			output += g.pop(fmt.Sprintf("QWORD [rbp + %v]", stackOffset))
 		}
-		output += expr
-
-		stackOffset := (g.currentFunction.parameters + 2) * 8
-
-		output += g.pop(fmt.Sprintf("QWORD [rbp + %v]", stackOffset))
 
 		output += g.endScopeInASM()
 		output += g.pop("rbp")

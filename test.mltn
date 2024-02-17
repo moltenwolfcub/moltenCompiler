@@ -75,17 +75,17 @@ if (v) {
 multiple lines are supported!
 */
 
-func num() {
+func 1 num() {
 	return 22;
 }
 
-func ex() {
+func 0 ex() {
 	exit(69);
 }
 
-func leave(code, offset) {
+func 0 leave(code, offset) {
 	exit(code + offset);
 }
 
-func dummy(param1) {
+func 0 dummy(param1) {
 }

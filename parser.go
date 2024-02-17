@@ -180,6 +180,12 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 	} else if p.mustTryConsume(_func).HasValue() {
 		node := NodeStmtFunctionDefinition{}
 
+		count, err := p.tryConsume(intLiteral, "expected an int for the number of returns")
+		if err != nil {
+			return nil, err
+		}
+		node.returns = count.value.MustGetValue()
+
 		ident, err := p.tryConsume(identifier, "expected function identifier after `func`")
 		if err != nil {
 			return nil, err
@@ -219,13 +225,22 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 	} else if tok := p.mustTryConsume(_return); tok.HasValue() {
 		node := NodeStmtReturn{_return: tok.MustGetValue()}
 
-		expr, err := p.ParseExpr()
-		if err != nil {
-			return nil, err
-		}
-		node.expr = expr
+		for {
+			expr, err := p.ParseExpr()
+			if err == errMissingExpr {
+				break
+			} else if err != nil {
+				return NodeFunctionCall{}, err
+			}
+			node.returns = append(node.returns, expr)
 
-		_, err = p.tryConsume(semiColon, "missing ';'")
+			_, err = p.tryConsume(comma, "optional so this should never error")
+			if err != nil {
+				break
+			}
+		}
+
+		_, err := p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
 			return nil, err
 		}
@@ -558,15 +573,16 @@ type NodeStmtContinue struct {
 func (NodeStmtContinue) IsNodeStmt() {}
 
 type NodeStmtFunctionDefinition struct {
-	ident  Token
-	params []Token
-	body   NodeScope
+	ident   Token
+	params  []Token
+	returns string
+	body    NodeScope
 }
 
 func (NodeStmtFunctionDefinition) IsNodeStmt() {}
 
 type NodeStmtReturn struct {
-	expr    NodeExpr
+	returns []NodeExpr
 	_return Token
 }
 

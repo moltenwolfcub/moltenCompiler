@@ -38,8 +38,39 @@ leave:
 	ret
 
 
+test:
+	push rbp
+	mov rbp, rsp
+
+	;=====FUNCTION BODY=====
+	mov rax, 6
+	push rax
+	pop QWORD [rbp + 16]
+	mov rax, 7
+	push rax
+	pop QWORD [rbp + 24]
+	mov rax, 8
+	push rax
+	pop QWORD [rbp + 32]
+	add rsp, 0
+	pop rbp
+	ret
+
+	add rsp, 0
+	pop rbp
+	ret
+
+
 _start:
 
+
+
+	push 0
+	push 0
+	push 0
+	call test
+	add rsp, 0
+	add rsp, 24
 
 	mov rax, 4
 	push rax

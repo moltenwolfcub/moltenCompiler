@@ -8,6 +8,9 @@ num:
 	;=====FUNCTION BODY=====
 	mov rax, 22
 	push rax
+	pop QWORD [rbp + 16]
+	add rsp, 0
+	pop rbp
 	ret
 
 	add rsp, 0
@@ -36,8 +39,8 @@ leave:
 	mov rbp, rsp
 
 	;=====FUNCTION BODY=====
-	push QWORD [rbp + 8]
 	push QWORD [rbp + 16]
+	push QWORD [rbp + 24]
 	pop rbx
 	pop rax
 	add rax, rbx

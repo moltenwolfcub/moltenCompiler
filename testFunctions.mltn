@@ -1,9 +1,15 @@
-func num() {
+func 1 num() {
 	return 22;
 }
 
-func leave(a, b) {
+func 0 leave(a, b) {
 	exit(a+b);
 }
+
+func 3 test() {
+	return 6, 7, 8;
+}
+
+test();
 
 leave(num(),4);

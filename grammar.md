@@ -12,9 +12,9 @@ $$
 		\textcolor{cyan}{while}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
 		\textcolor{cyan}{break};\\
 		\textcolor{cyan}{continue};\\
-		\textcolor{cyan}{func}\space\textcolor{yellow}{funcIdent}(\textcolor{yellow}{param1},^*)[\textcolor{lime}{scope}]\\
+		\textcolor{cyan}{func}\space\text{intLiteral}\space\textcolor{yellow}{funcIdent}(\textcolor{yellow}{param1},^*)[\textcolor{lime}{scope}]\\
 		[\textcolor{lime}{funcCall}];\\		
-		\textcolor{cyan}{return}\space[\textcolor{lime}{expr}];\\
+		\textcolor{cyan}{return}\space[\textcolor{lime}{expr}],^*;\\
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}
