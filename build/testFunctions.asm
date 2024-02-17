@@ -1,6 +1,23 @@
 global _start
 
 
+num:
+	push rbp
+	mov rbp, rsp
+
+	;=====FUNCTION BODY=====
+	mov rax, 22
+	push rax
+	pop QWORD [rbp + 16]
+	add rsp, 0
+	pop rbp
+	ret
+
+	add rsp, 0
+	pop rbp
+	ret
+
+
 leave:
 	push rbp
 	mov rbp, rsp
@@ -23,10 +40,12 @@ leave:
 
 _start:
 
+
 	mov rax, 4
 	push rax
-	mov rax, 32
-	push rax
+	push 0
+	call num
+	add rsp, 0
 	call leave
 	add rsp, 16
 	add rsp, 0

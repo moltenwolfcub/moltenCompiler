@@ -95,7 +95,7 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("function identifier already used: %v", functionName))
 		}
 	}
-	g.currentFunction = Function{name: functionName}
+	g.currentFunction = Function{name: functionName, parameters: len(stmt.params)}
 
 	output += functionName + ":\n"
 
@@ -267,6 +267,12 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		}
 		output += expr
 
+		stackOffset := (g.currentFunction.parameters + 2) * 8
+
+		output += g.pop(fmt.Sprintf("QWORD [rbp + %v]", stackOffset))
+
+		output += g.endScopeInASM()
+		output += g.pop("rbp")
 		output += "\tret\n"
 
 	default:
@@ -281,15 +287,22 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	functionName := stmt.ident.value.MustGetValue()
 	var function Function
 	exists := false
+	foundWrong := false
 	for _, f := range g.functions {
 		if f.name == functionName {
-			function = f
-			exists = true
-			break
+			if len(stmt.params) == f.parameters {
+				function = f
+				exists = true
+				break
+			}
+			foundWrong = true
 		}
 	}
 	if !exists {
 		return "", 0, stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined function: '%s'", functionName))
+	}
+	if foundWrong {
+		return "", 0, stmt.ident.lineInfo.PositionedError("incorrect number of arguments passed.")
 	}
 
 	for i := 0; i < function.returnCount; i++ {
@@ -603,6 +616,11 @@ func (g *Generator) endScope() string {
 
 	return "\tadd rsp, " + fmt.Sprintf("%d", popCount*8) + "\n"
 }
+func (g Generator) endScopeInASM() string {
+	popCount := len(g.variables) - g.scopes[len(g.scopes)-1]
+
+	return "\tadd rsp, " + fmt.Sprintf("%d", popCount*8) + "\n"
+}
 
 func (g *Generator) createLabel(labelCtx ...string) string {
 	var suffix string
@@ -626,4 +644,5 @@ type Variable struct {
 type Function struct {
 	name        string
 	returnCount int
+	parameters  int
 }

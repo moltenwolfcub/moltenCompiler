@@ -1,17 +1,9 @@
-/*
 func num() {
 	return 22;
 }
-*/
 
 func leave(a, b) {
 	exit(a+b);
 }
 
-leave(32,4);
-
-/*
-var retTest;
-retTest = num();
-exit(retTest);
-*/
+leave(num(),4);
