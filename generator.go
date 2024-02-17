@@ -17,6 +17,9 @@ type Generator struct {
 	breakLabel    string
 	continueLabel string
 
+	inFunc          bool
+	currentFunction Function
+
 	genASMComments bool
 }
 
@@ -82,6 +85,7 @@ func (g *Generator) PreGenerate() (string, error) {
 }
 
 func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, error) {
+	g.inFunc = true
 	output := ""
 
 	functionName := stmt.ident.value.MustGetValue()
@@ -91,7 +95,7 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("function identifier already used: %v", functionName))
 		}
 	}
-	g.functions = append(g.functions, Function{name: functionName})
+	g.currentFunction = Function{name: functionName}
 
 	output += functionName + ":\n"
 
@@ -110,6 +114,9 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 	output += body
 
 	output += "\tret\n"
+
+	g.inFunc = false
+	g.functions = append(g.functions, g.currentFunction)
 
 	return output, nil
 }
@@ -255,6 +262,24 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 
 		output += "\tcall " + function.name + "\n"
 		output += "\tadd rsp, " + fmt.Sprintf("%d", len(stmt.params)*8) + "\n"
+		if function.returnCount == 1 {
+			output += g.pop("rax") // get rid of the 1 return value if not storing in a variable
+		}
+
+	case NodeStmtReturn:
+		if !g.inFunc {
+			return "", stmt._return.lineInfo.PositionedError("can only return when in a function")
+		}
+
+		g.currentFunction.returnCount = 1
+
+		expr, err := g.GenExpr(stmt.expr)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+
+		output += "\tret\n"
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt))
@@ -552,5 +577,6 @@ type Variable struct {
 }
 
 type Function struct {
-	name string
+	name        string
+	returnCount int
 }

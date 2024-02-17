@@ -1,6 +1,16 @@
 global _start
 
 
+num:
+	;=====FUNCTION BODY=====
+	mov rax, 22
+	push rax
+	ret
+
+	add rsp, 0
+	ret
+
+
 ex:
 	;=====FUNCTION BODY=====
 	mov rax, 69
@@ -273,59 +283,6 @@ label5_endWhile:
 	call ex
 	add rsp, 0
 
-	push QWORD [rsp + 32]
-	pop rax
-	test rax, rax
-	jz label9_else
-	push QWORD [rsp + 32]
-	mov rax, 60
-	pop rdi
-	syscall
-
-	add rsp, 0
-label9_else:
-	push QWORD [rsp + 32]
-	mov rax, 10
-	push rax
-	pop rbx
-	pop rax
-	sub rax, rbx
-	push rax
-	pop rax
-	test rax, rax
-	jz label10_else
-	push QWORD [rsp + 40]
-	mov rax, 4
-	push rax
-	pop rbx
-	pop rax
-	div rbx
-	push rax
-	mov rax, 2
-	push rax
-	mov rax, 4
-	push rax
-	pop rbx
-	pop rax
-	add rax, rbx
-	push rax
-	pop rbx
-	pop rax
-	mul rbx
-	push rax
-	mov rax, 60
-	pop rdi
-	syscall
-
-	add rsp, 0
-label10_else:
-	mov rax, 4
-	push rax
-	mov rax, 60
-	pop rdi
-	syscall
-
-	add rsp, 0
 
 
 
