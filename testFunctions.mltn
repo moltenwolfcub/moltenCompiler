@@ -1,0 +1,7 @@
+func num() {
+	return 22;
+}
+
+var retTest;
+retTest = num();
+exit(retTest);

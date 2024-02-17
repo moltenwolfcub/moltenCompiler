@@ -85,18 +85,18 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		}
 
 		return node, nil
-	} else if tok := p.mustTryConsume(identifier); tok.HasValue() {
-		if !p.peek().HasValue() {
-			return nil, errors.New("expected '=' or ';' after identifier for variable assignment or function call. didn't find any token")
+	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == identifier {
+		if !p.peek(1).HasValue() {
+			return nil, errors.New("expected '=' or '()' after identifier for variable assignment or function call. didn't find any token")
 		}
 
-		switch p.peek().MustGetValue().tokenType {
+		switch p.peek(1).MustGetValue().tokenType {
 		case equals:
-			p.consume()
 
 			node := NodeStmtVarAssign{
-				ident: tok.MustGetValue(),
+				ident: p.consume(),
 			}
+			p.consume()
 
 			expr, err := p.ParseExpr()
 			if err != nil {
@@ -111,28 +111,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 
 			return node, nil
 		case openRoundBracket:
-			p.consume()
-
-			node := NodeStmtFunctionCall{
-				ident: tok.MustGetValue(),
-			}
-
-			for {
-				expr, err := p.ParseExpr()
-				if err == errMissingExpr {
-					break
-				} else if err != nil {
-					return nil, err
-				}
-				node.params = append(node.params, expr)
-
-				_, err = p.tryConsume(comma, "optional so this should never error")
-				if err != nil {
-					break
-				}
-			}
-
-			_, err := p.tryConsume(closeRoundBracket, "missing ')'")
+			funcCall, err := p.ParseFuncCall()
 			if err != nil {
 				return nil, err
 			}
@@ -142,7 +121,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 				return nil, err
 			}
 
-			return node, nil
+			return funcCall, nil
 		default:
 			return nil, errors.New("expected '=' or '()' after identifier for variable assignment or function call")
 		}
@@ -262,8 +241,12 @@ var errMissingStmt error = errors.New("expected statement but couldn't find one"
 func (p *Parser) ParseTerm() (NodeTerm, error) {
 	if tok := p.mustTryConsume(intLiteral); tok.HasValue() {
 		return NodeTermIntLiteral{tok.MustGetValue()}, nil
-	} else if tok := p.mustTryConsume(identifier); tok.HasValue() {
-		return NodeTermIdentifier{tok.MustGetValue()}, nil
+	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == identifier {
+		if p.peek(1).MustGetValue().tokenType == openRoundBracket {
+			return p.ParseFuncCall()
+		} else {
+			return NodeTermIdentifier{p.consume()}, nil
+		}
 	} else if p.mustTryConsume(openRoundBracket).HasValue() {
 		expr, err := p.ParseExpr()
 		if err != nil {
@@ -279,6 +262,40 @@ func (p *Parser) ParseTerm() (NodeTerm, error) {
 }
 
 var errMissingTerm error = errors.New("expected term but couldn't find one")
+
+func (p *Parser) ParseFuncCall() (NodeFunctionCall, error) {
+
+	node := NodeFunctionCall{
+		ident: p.consume(),
+	}
+
+	_, err := p.tryConsume(openRoundBracket, "missing '('")
+	if err != nil {
+		return NodeFunctionCall{}, err
+	}
+
+	for {
+		expr, err := p.ParseExpr()
+		if err == errMissingExpr {
+			break
+		} else if err != nil {
+			return NodeFunctionCall{}, err
+		}
+		node.params = append(node.params, expr)
+
+		_, err = p.tryConsume(comma, "optional so this should never error")
+		if err != nil {
+			break
+		}
+	}
+
+	_, err = p.tryConsume(closeRoundBracket, "missing ')'")
+	if err != nil {
+		return NodeFunctionCall{}, err
+	}
+
+	return node, nil
+}
 
 func (p *Parser) ParseScope() (NodeScope, error) {
 	if !p.mustTryConsume(openCurlyBracket).HasValue() {
@@ -548,13 +565,6 @@ type NodeStmtFunctionDefinition struct {
 
 func (NodeStmtFunctionDefinition) IsNodeStmt() {}
 
-type NodeStmtFunctionCall struct {
-	ident  Token
-	params []NodeExpr
-}
-
-func (NodeStmtFunctionCall) IsNodeStmt() {}
-
 type NodeStmtReturn struct {
 	expr    NodeExpr
 	_return Token
@@ -621,6 +631,15 @@ type NodeTermIdentifier struct {
 
 func (NodeTermIdentifier) IsNodeTerm() {}
 func (NodeTermIdentifier) IsNodeExpr() {}
+
+type NodeFunctionCall struct {
+	ident  Token
+	params []NodeExpr
+}
+
+func (NodeFunctionCall) IsNodeStmt() {}
+func (NodeFunctionCall) IsNodeTerm() {}
+func (NodeFunctionCall) IsNodeExpr() {}
 
 type NodeTermRoundBracketExpr struct {
 	expr NodeExpr

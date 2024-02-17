@@ -280,8 +280,18 @@ label5_endWhile:
 	call leave
 	add rsp, 16
 
-	call ex
+	mov rax, 0
+	push rax
+
+	call num
 	add rsp, 0
+	pop rax
+	mov QWORD [rsp + 0], rax
+
+	push QWORD [rsp + 0]
+	mov rax, 60
+	pop rdi
+	syscall
 
 
 

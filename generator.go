@@ -117,6 +117,8 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 
 	g.inFunc = false
 	g.functions = append(g.functions, g.currentFunction)
+	g.currentFunction = Function{}
+	g.stackSize = 0
 
 	return output, nil
 }
@@ -235,35 +237,16 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			this is just here to keep the type switch happy.
 		*/
 
-	case NodeStmtFunctionCall:
-		functionName := stmt.ident.value.MustGetValue()
-		var function Function
-		exists := false
-		for _, f := range g.functions {
-			if f.name == functionName {
-				function = f
-				exists = true
-				break
-			}
+	case NodeFunctionCall:
+		funcCall, retCount, err := g.GenFuncCall(stmt)
+		if err != nil {
+			return "", err
 		}
-		if !exists {
-			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined function: '%s'", functionName))
-		}
+		output += funcCall
 
-		reversed := stmt.params
-		slices.Reverse(reversed)
-		for _, p := range reversed {
-			expr, err := g.GenExpr(p)
-			if err != nil {
-				return "", err
-			}
-			output += expr
-		}
-
-		output += "\tcall " + function.name + "\n"
-		output += "\tadd rsp, " + fmt.Sprintf("%d", len(stmt.params)*8) + "\n"
-		if function.returnCount == 1 {
-			output += g.pop("rax") // get rid of the 1 return value if not storing in a variable
+		// get rid of the 1 return value as we're not storing it
+		if retCount == 1 {
+			output += g.pop("rax")
 		}
 
 	case NodeStmtReturn:
@@ -285,6 +268,41 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt))
 	}
 	return output, nil
+}
+
+func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
+	output := ""
+
+	functionName := stmt.ident.value.MustGetValue()
+	var function Function
+	exists := false
+	for _, f := range g.functions {
+		if f.name == functionName {
+			function = f
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		return "", 0, stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined function: '%s'", functionName))
+	}
+
+	reversed := stmt.params
+	slices.Reverse(reversed)
+	for _, p := range reversed {
+		expr, err := g.GenExpr(p)
+		if err != nil {
+			return "", 0, err
+		}
+		output += expr
+	}
+
+	output += "\tcall " + function.name + "\n"
+	output += "\tadd rsp, " + fmt.Sprintf("%d", len(stmt.params)*8) + "\n"
+
+	g.stackSize += uint(function.returnCount)
+
+	return output, function.returnCount, nil
 }
 
 func (g *Generator) GenExpr(rawExpr NodeExpr) (string, error) {
@@ -407,6 +425,18 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 		}
 
 		output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
+
+	case NodeFunctionCall:
+		funcCall, retCount, err := g.GenFuncCall(term)
+		if err != nil {
+			return "", err
+		}
+
+		if retCount != 1 {
+			term.ident.lineInfo.PositionedError("function doesn't return any values so can't be used as a term")
+		}
+
+		output += funcCall
 
 	case NodeTermRoundBracketExpr:
 		expr, err := g.GenExpr(term.expr)

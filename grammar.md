@@ -13,7 +13,7 @@ $$
 		\textcolor{cyan}{break};\\
 		\textcolor{cyan}{continue};\\
 		\textcolor{cyan}{func}\space\textcolor{yellow}{funcIdent}(\textcolor{yellow}{param1},^*)[\textcolor{lime}{scope}]\\
-		\textcolor{yellow}{funcIdent}([\textcolor{lime}{expr}],^*);\\
+		[\textcolor{lime}{funcCall}];\\		
 		\textcolor{cyan}{return}\space[\textcolor{lime}{expr}];\\
 	\end{cases}
 	\\
@@ -33,6 +33,7 @@ $$
 		\text{intLiteral}\\
 		\textcolor{yellow}{varIdent}\\
 		([\textcolor{lime}{expr}])\\
+		[\textcolor{lime}{funcCall}]
 	\end{cases}
 	\\
 	[\textcolor{red}{scope}] &\to \{[\textcolor{lime}{stmt}]^*\}
@@ -42,6 +43,8 @@ $$
 		[\textcolor{lime}{if}]\\
 		[\textcolor{lime}{scope}]\\
 	\end{cases}\\
+
+	[\textcolor{red}{funcCall}] &\to \textcolor{yellow}{funcIdent}([\textcolor{lime}{expr}],^*)\\
 
 \end{align}
 $$

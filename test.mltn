@@ -50,9 +50,16 @@ while (w) {
 
 dummy(5);
 
+// var test; test = 7;
+// exit(test);
+
 leave(6, 4);
 
-ex();
+//ex();
+
+var retTest;
+retTest = num();
+exit(retTest);
 
 /*
 if (v) {
