@@ -48,7 +48,7 @@ while (w) {
 	}
 }
 
-//dummy(5);
+dummy(5);
 
 // var test; test = 7;
 // exit(test);
@@ -88,4 +88,5 @@ func 0 leave(code, offset) {
 }
 
 func 0 dummy(param1) {
+	return;
 }

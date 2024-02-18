@@ -1,7 +1,8 @@
 global _start
 
 
-num:
+num_0:
+	;=====FUNCTION SETUP=====
 	push rbp
 	mov rbp, rsp
 
@@ -14,11 +15,13 @@ num:
 	ret
 
 	add rsp, 0
+	;=====FUNCTION CLEANUP=====
 	pop rbp
 	ret
 
 
-ex:
+ex_0:
+	;=====FUNCTION SETUP=====
 	push rbp
 	mov rbp, rsp
 
@@ -30,11 +33,13 @@ ex:
 	syscall
 
 	add rsp, 0
+	;=====FUNCTION CLEANUP=====
 	pop rbp
 	ret
 
 
-leave:
+leave_2:
+	;=====FUNCTION SETUP=====
 	push rbp
 	mov rbp, rsp
 
@@ -49,17 +54,24 @@ leave:
 	pop rdi
 	syscall
 
-	add rsp, 16
+	add rsp, 0
+	;=====FUNCTION CLEANUP=====
 	pop rbp
 	ret
 
 
-dummy:
+dummy_1:
+	;=====FUNCTION SETUP=====
 	push rbp
 	mov rbp, rsp
 
 	;=====FUNCTION BODY=====
-	add rsp, 8
+	add rsp, 0
+	pop rbp
+	ret
+
+	add rsp, 0
+	;=====FUNCTION CLEANUP=====
 	pop rbp
 	ret
 
@@ -98,6 +110,7 @@ _start:
 	pop rax
 	mov QWORD [rsp + 0], rax
 
+	;---start_scope---
 	mov rax, 0
 	push rax
 
@@ -106,6 +119,7 @@ _start:
 	pop rax
 	mov QWORD [rsp + 0], rax
 
+	;---start_scope---
 	mov rax, 0
 	push rax
 
@@ -125,6 +139,7 @@ _start:
 	mov QWORD [rsp + 8], rax
 
 	add rsp, 8
+	;---end_scope---
 
 	push QWORD [rsp + 8]
 	push QWORD [rsp + 8]
@@ -136,6 +151,7 @@ _start:
 	mov QWORD [rsp + 8], rax
 
 	add rsp, 8
+	;---end_scope---
 
 	mov rax, 0
 	push rax
@@ -164,6 +180,7 @@ label1_startWhile:
 	pop rax
 	test rax, rax
 	jz label2_endWhile
+	;---start_scope---
 	push QWORD [rsp + 0]
 	mov rax, 1
 	push rax
@@ -184,14 +201,17 @@ label1_startWhile:
 	pop rax
 	test rax, rax
 	jz label3_else
+	;---start_scope---
 	jmp label1_startWhile
 
 	add rsp, 0
+	;---end_scope---
 label3_else:
 
 	jmp label2_endWhile
 
 	add rsp, 0
+	;---end_scope---
 	jmp label1_startWhile
 label2_endWhile:
 
@@ -208,6 +228,7 @@ label4_startWhile:
 	pop rax
 	test rax, rax
 	jz label5_endWhile
+	;---start_scope---
 	push QWORD [rsp + 0]
 	mov rax, 7
 	push rax
@@ -232,6 +253,7 @@ label6_startWhile:
 	pop rax
 	test rax, rax
 	jz label7_endWhile
+	;---start_scope---
 	push QWORD [rsp + 8]
 	mov rax, 1
 	push rax
@@ -256,26 +278,36 @@ label6_startWhile:
 	pop rax
 	test rax, rax
 	jz label8_else
+	;---start_scope---
 	jmp label6_startWhile
 
 	add rsp, 0
+	;---end_scope---
 label8_else:
 
 	jmp label7_endWhile
 
 	add rsp, 0
+	;---end_scope---
 	jmp label6_startWhile
 label7_endWhile:
 
 	add rsp, 8
+	;---end_scope---
 	jmp label4_startWhile
 label5_endWhile:
+
+	mov rax, 5
+	push rax
+	call dummy_1
+	add rsp, 8
+	add rsp, 0
 
 	mov rax, 14
 	push rax
 	mov rax, 6
 	push rax
-	call leave
+	call leave_2
 	add rsp, 16
 	add rsp, 0
 

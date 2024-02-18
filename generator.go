@@ -105,6 +105,9 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 
 	output += fmt.Sprintf("%s_%d:\n", functionName, len(stmt.params))
 
+	if g.genASMComments {
+		output += "\t;=====FUNCTION SETUP=====\n"
+	}
 	output += g.push("rbp")
 	output += "\tmov rbp, rsp\n\n"
 
@@ -118,11 +121,15 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 		parameters = append(parameters, v)
 	}
 
-	body, err := g.GenScopeWithParams(stmt.body, parameters)
+	body, err := g.GenFunctionBody(stmt.body, parameters)
 	if err != nil {
 		return "", err
 	}
 	output += body
+
+	if g.genASMComments {
+		output += "\t;=====FUNCTION CLEANUP=====\n"
+	}
 
 	output += g.pop("rbp")
 
@@ -183,7 +190,11 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		}
 		output += expr
 		output += g.pop("rax")
-		output += fmt.Sprintf("\tmov QWORD [rsp + %v], rax\n", (g.stackSize-variable.stackLoc-1)*8)
+		if variable.isParameter {
+			output += fmt.Sprintf("\tmov QWORD [rbp + %v], rax\n", variable.stackLoc*8)
+		} else {
+			output += fmt.Sprintf("\tmov QWORD [rsp + %v], rax\n", (g.stackSize-variable.stackLoc-1)*8)
+		}
 
 	case NodeScope:
 		scope, err := g.GenScope(stmt)
@@ -281,7 +292,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			output += g.pop(fmt.Sprintf("QWORD [rbp + %v]", stackOffset))
 		}
 
-		output += g.endScopeInASM()
+		output += g.exitFunction(false)
 		output += g.pop("rbp")
 		output += "\tret\n"
 
@@ -508,17 +519,20 @@ func (g *Generator) GenScope(scope NodeScope) (string, error) {
 	return output, nil
 }
 
-func (g *Generator) GenScopeWithParams(scope NodeScope, params []Variable) (string, error) {
+func (g *Generator) GenFunctionBody(body NodeScope, params []Variable) (string, error) {
 	output := ""
 
-	output += g.beginScope()
+	// start "scope" for the function body
+	g.scopes = append(g.scopes, len(g.variables))
+
+	g.currentFunction.scopeIndex = len(g.scopes) - 1
 
 	g.variables = append(g.variables, params...)
 
 	if g.genASMComments {
 		output += "\t;=====FUNCTION BODY=====\n"
 	}
-	for _, stmt := range scope.stmts {
+	for _, stmt := range body.stmts {
 		generated, err := g.GenStmt(stmt)
 		if err != nil {
 			return "", err
@@ -526,7 +540,7 @@ func (g *Generator) GenScopeWithParams(scope NodeScope, params []Variable) (stri
 		output += generated + "\n"
 	}
 
-	output += g.endScope()
+	output += g.exitFunction(true)
 
 	return output, nil
 }
@@ -596,20 +610,51 @@ func (g *Generator) pop(reg string) string {
 }
 
 func (g *Generator) beginScope() string {
+	output := ""
+
 	g.scopes = append(g.scopes, len(g.variables))
-	return ""
+
+	if g.genASMComments {
+		output += "\t;---start_scope---\n"
+	}
+
+	return output
 }
 func (g *Generator) endScope() string {
+	output := ""
+
 	popCount := len(g.variables) - g.scopes[len(g.scopes)-1]
 
 	g.stackSize -= uint(popCount)
 	g.variables = g.variables[0 : len(g.variables)-popCount]
 	g.scopes = g.scopes[0 : len(g.scopes)-1]
 
-	return "\tadd rsp, " + fmt.Sprintf("%d", popCount*8) + "\n"
+	output += "\tadd rsp, " + fmt.Sprintf("%d", popCount*8) + "\n"
+
+	if g.genASMComments {
+		output += "\t;---end_scope---\n"
+	}
+
+	return output
 }
-func (g Generator) endScopeInASM() string {
-	popCount := len(g.variables) - g.scopes[len(g.scopes)-1]
+func (g *Generator) exitFunction(updateLocal bool) string {
+	targetVariableCount := g.scopes[g.currentFunction.scopeIndex] + g.currentFunction.parameters
+	popCount := len(g.variables) - targetVariableCount
+
+	// localPopCount := len(g.variables) - g.scopes[len(g.scopes)-1]
+
+	// for i := len(g.scopes) - 1; i >= g.currentFunction.scopeIndex; i-- {
+	// 	len(g.variables)- g.scopes[]
+	// }
+	// popCount := localPopCount - paramCount
+
+	if updateLocal {
+		localPopCount := popCount + g.currentFunction.parameters
+
+		g.stackSize -= uint(localPopCount)
+		g.variables = g.variables[0 : len(g.variables)-localPopCount]
+		g.scopes = g.scopes[0:g.currentFunction.scopeIndex]
+	}
 
 	return "\tadd rsp, " + fmt.Sprintf("%d", popCount*8) + "\n"
 }
@@ -637,4 +682,6 @@ type Function struct {
 	name        string
 	returnCount int
 	parameters  int
+
+	scopeIndex int
 }

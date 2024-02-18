@@ -2,6 +2,7 @@ global _start
 
 
 num_0:
+	;=====FUNCTION SETUP=====
 	push rbp
 	mov rbp, rsp
 
@@ -14,11 +15,13 @@ num_0:
 	ret
 
 	add rsp, 0
+	;=====FUNCTION CLEANUP=====
 	pop rbp
 	ret
 
 
 leave_2:
+	;=====FUNCTION SETUP=====
 	push rbp
 	mov rbp, rsp
 
@@ -33,12 +36,14 @@ leave_2:
 	pop rdi
 	syscall
 
-	add rsp, 16
+	add rsp, 0
+	;=====FUNCTION CLEANUP=====
 	pop rbp
 	ret
 
 
 leave_3:
+	;=====FUNCTION SETUP=====
 	push rbp
 	mov rbp, rsp
 
@@ -58,12 +63,71 @@ leave_3:
 	pop rdi
 	syscall
 
-	add rsp, 24
+	add rsp, 0
+	;=====FUNCTION CLEANUP=====
+	pop rbp
+	ret
+
+
+empty_0:
+	;=====FUNCTION SETUP=====
+	push rbp
+	mov rbp, rsp
+
+	;=====FUNCTION BODY=====
+	add rsp, 0
+	;=====FUNCTION CLEANUP=====
+	pop rbp
+	ret
+
+
+ret_0:
+	;=====FUNCTION SETUP=====
+	push rbp
+	mov rbp, rsp
+
+	;=====FUNCTION BODY=====
+	add rsp, 0
+	pop rbp
+	ret
+
+	add rsp, 0
+	;=====FUNCTION CLEANUP=====
+	pop rbp
+	ret
+
+
+pmRet_1:
+	;=====FUNCTION SETUP=====
+	push rbp
+	mov rbp, rsp
+
+	;=====FUNCTION BODY=====
+	mov rax, 0
+	push rax
+
+	;---start_scope---
+	mov rax, 0
+	push rax
+
+	;---start_scope---
+	mov rax, 0
+	push rax
+
+	add rsp, 8
+	;---end_scope---
+
+	add rsp, 8
+	;---end_scope---
+
+	add rsp, 8
+	;=====FUNCTION CLEANUP=====
 	pop rbp
 	ret
 
 
 test_0:
+	;=====FUNCTION SETUP=====
 	push rbp
 	mov rbp, rsp
 
@@ -82,11 +146,15 @@ test_0:
 	ret
 
 	add rsp, 0
+	;=====FUNCTION CLEANUP=====
 	pop rbp
 	ret
 
 
 _start:
+
+
+
 
 
 
@@ -98,23 +166,18 @@ _start:
 	add rsp, 0
 	add rsp, 24
 
-	mov rax, 4
-	push rax
-	push 0
-	call num_0
+	call empty_0
 	add rsp, 0
-	call leave_2
-	add rsp, 16
+	add rsp, 0
+
+	call ret_0
+	add rsp, 0
 	add rsp, 0
 
 	mov rax, 5
 	push rax
-	mov rax, 4
-	push rax
-	mov rax, 3
-	push rax
-	call leave_3
-	add rsp, 24
+	call pmRet_1
+	add rsp, 8
 	add rsp, 0
 
 	mov rax, 60

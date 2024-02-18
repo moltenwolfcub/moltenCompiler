@@ -1,4 +1,6 @@
 global _start
+
+
 _start:
 	mov rax, 0
 	push rax
@@ -22,6 +24,7 @@ label1_startWhile:
 	pop rax
 	test rax, rax
 	jz label2_endWhile
+	;---start_scope---
 	push QWORD [rsp + 0]
 	push QWORD [rsp + 16]
 	pop rbx
@@ -30,6 +33,7 @@ label1_startWhile:
 	push rax
 	pop rax
 	mov QWORD [rsp + 0], rax
+
 	push QWORD [rsp + 8]
 	mov rax, 1
 	push rax
@@ -39,6 +43,7 @@ label1_startWhile:
 	push rax
 	pop rax
 	mov QWORD [rsp + 8], rax
+
 	push QWORD [rsp + 8]
 	mov rax, 1
 	push rax
@@ -49,11 +54,17 @@ label1_startWhile:
 	pop rax
 	test rax, rax
 	jz label3_else
+	;---start_scope---
 	jmp label1_startWhile
+
 	add rsp, 0
+	;---end_scope---
 label3_else:
+
 	jmp label2_endWhile
+
 	add rsp, 0
+	;---end_scope---
 	jmp label1_startWhile
 label2_endWhile:
 

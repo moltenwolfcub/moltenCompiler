@@ -2,6 +2,7 @@ global _start
 
 
 factorial_1:
+	;=====FUNCTION SETUP=====
 	push rbp
 	mov rbp, rsp
 
@@ -10,6 +11,7 @@ factorial_1:
 	pop rax
 	test rax, rax
 	jz label1_else
+	;---start_scope---
 	push QWORD [rbp + 16]
 	push 0
 	push QWORD [rbp + 16]
@@ -31,7 +33,9 @@ factorial_1:
 	ret
 
 	add rsp, 0
+	;---end_scope---
 label1_else:
+
 	mov rax, 1
 	push rax
 	pop QWORD [rbp + 24]
@@ -40,8 +44,7 @@ label1_else:
 	ret
 
 	add rsp, 0
-
-	add rsp, 8
+	;=====FUNCTION CLEANUP=====
 	pop rbp
 	ret
 

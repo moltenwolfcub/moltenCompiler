@@ -9,11 +9,31 @@ func 0 leave(a, b, c) {
 	exit(a+b+c);
 }
 
+func 0 empty() {
+}
+
+func 0 ret() {
+	return;
+}
+
+func 0 pmRet(pm) {
+	var one;
+	{
+		var two;
+		{
+			var three;
+		}
+	}
+}
+
 func 3 test() {
 	return 6, 7, 8;
 }
 
 test();
+empty();
+ret();
+pmRet(5);
 
-leave(num(),4);
-leave(3, 4, 5);
+//leave(num(),4);
+//leave(3, 4, 5);

@@ -1,9 +1,8 @@
 func 1 factorial(n) {
 	if (n) {
 		return n * factorial(n - 1);
-	} else {
-		return 1;
 	}
+	return 1;
 }
 
 exit(factorial(5));
