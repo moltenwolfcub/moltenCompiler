@@ -1,5 +1,5 @@
 $$
-\begin{align}
+\begin{align*}
 	
 	[\textcolor{red}{prog}] &\to [\textcolor{lime}{stmt}]^*
 	\\
@@ -47,7 +47,7 @@ $$
 
 	[\textcolor{red}{funcCall}] &\to \textcolor{yellow}{funcIdent}([\textcolor{lime}{expr}],^*)\\
 
-\end{align}
+\end{align*}
 $$
 
 
