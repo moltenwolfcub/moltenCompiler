@@ -15,6 +15,7 @@ $$
 		\textcolor{cyan}{func}\space\text{intLiteral}\space\textcolor{yellow}{funcIdent}(\textcolor{yellow}{param1},^*)[\textcolor{lime}{scope}]\\
 		[\textcolor{lime}{funcCall}];\\		
 		\textcolor{cyan}{return}\space[\textcolor{lime}{expr}],^*;\\
+		\textcolor{cyan}{syscall}([\textcolor{lime}{expr}],^*);\\
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}
