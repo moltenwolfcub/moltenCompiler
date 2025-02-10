@@ -246,11 +246,51 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		}
 
 		return node, nil
+
+	} else if tok := p.mustTryConsume(syscall); tok.HasValue() {
+		node := NodeStmtSyscall{syscall: tok.MustGetValue()}
+
+		_, err := p.tryConsume(openRoundBracket, "Expected '('")
+		if err != nil {
+			return nil, err
+		}
+
+		for {
+			expr, err := p.ParseExpr()
+			if err == errMissingExpr {
+				break
+			} else if err != nil {
+				return NodeStmtSyscall{}, err
+			}
+			node.arguments = append(node.arguments, expr)
+
+			_, err = p.tryConsume(comma, "optional so this should never error")
+			if err != nil {
+				break
+			}
+		}
+		if len(node.arguments) > 7 {
+			return nil, errSyscallArgs
+		}
+
+		_, err = p.tryConsume(closeRoundBracket, "Expected ')'")
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = p.tryConsume(semiColon, "missing ';'")
+		if err != nil {
+			return nil, err
+		}
+
+		return node, nil
+
 	} else {
 		return nil, errMissingStmt
 	}
 }
 
+var errSyscallArgs error = errors.New("syscalls can't have more than 7 arguments")
 var errMissingStmt error = errors.New("expected statement but couldn't find one")
 
 func (p *Parser) ParseTerm() (NodeTerm, error) {
@@ -587,6 +627,13 @@ type NodeStmtReturn struct {
 }
 
 func (NodeStmtReturn) IsNodeStmt() {}
+
+type NodeStmtSyscall struct {
+	arguments []NodeExpr
+	syscall   Token
+}
+
+func (NodeStmtSyscall) IsNodeStmt() {}
 
 type NodeExpr interface {
 	IsNodeExpr()
