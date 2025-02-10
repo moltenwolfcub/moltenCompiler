@@ -1,1 +1,5 @@
-syscall(60, 3+2);
+func 0 _exit(exitCode) {
+	syscall(60, exitCode);
+}
+
+_exit(3+8);
