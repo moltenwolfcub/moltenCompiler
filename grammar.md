@@ -33,7 +33,9 @@ $$
 		\text{intLiteral}\\
 		\textcolor{yellow}{varIdent}\\
 		([\textcolor{lime}{expr}])\\
-		[\textcolor{lime}{funcCall}]
+		[\textcolor{lime}{funcCall}]\\
+		\&\textcolor{yellow}{varIdent}\\
+		*\textcolor{yellow}{varIdent}\\
 	\end{cases}
 	\\
 	[\textcolor{red}{scope}] &\to \{[\textcolor{lime}{stmt}]^*\}
