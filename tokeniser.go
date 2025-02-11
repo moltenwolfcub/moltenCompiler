@@ -10,8 +10,7 @@ import (
 type TokenType int
 
 const (
-	exit TokenType = iota
-	intLiteral
+	intLiteral TokenType = iota
 	semiColon
 	openRoundBracket
 	closeRoundBracket
@@ -169,11 +168,7 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 				buf = append(buf, t.consume())
 			}
 
-			if string(buf) == "exit" {
-				tokens = append(tokens, Token{tokenType: exit, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
-			} else if string(buf) == "var" {
+			if string(buf) == "var" {
 				tokens = append(tokens, Token{tokenType: _var, lineInfo: t.currentLineInfo})
 				t.currentLineInfo.IncWord(buf)
 				buf = []rune{}

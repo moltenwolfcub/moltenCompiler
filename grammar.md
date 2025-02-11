@@ -4,7 +4,6 @@ $$
 	[\textcolor{red}{prog}] &\to [\textcolor{lime}{stmt}]^*
 	\\
 	[\textcolor{red}{stmt}] &\to \begin{cases}
-		\textcolor{cyan}{exit}([\textcolor{lime}{expr}]);\\
 		\textcolor{cyan}{var}\space\textcolor{yellow}{varIdent};\\
 		\textcolor{yellow}{varIdent}=[\textcolor{lime}{expr}];\\
 		[\textcolor{lime}{scope}]\\

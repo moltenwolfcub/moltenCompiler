@@ -1,3 +1,7 @@
+func 0 exit(code) {
+	syscall(60, code);
+}
+
 var input;
 input = 7;
 

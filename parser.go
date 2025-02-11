@@ -33,45 +33,7 @@ func (p *Parser) ParseProg() (NodeProg, error) {
 }
 
 func (p *Parser) ParseStmt() (NodeStmt, error) {
-	if p.mustTryConsume(exit).HasValue() {
-		_, err := p.tryConsume(openRoundBracket, "expected '(' after 'exit'")
-		if err != nil {
-			return nil, err
-		}
-
-		var node NodeStmtExit
-
-		nodeExpr, err := p.ParseExpr()
-		if err == errMissingExpr {
-			// there isn't an expression, default to 0
-			if p.mustTryConsume(closeRoundBracket).HasValue() {
-				node = NodeStmtExit{NodeTermIntLiteral{Token{
-					tokenType: intLiteral,
-					value:     opt.ToOptional("0"),
-				}}}
-			} else {
-				return nil, errors.New("invalid expression for exit. expected exit code or ')' for default value of 0")
-			}
-		} else if err != nil {
-			// error reading expression
-			return nil, err
-		} else {
-			// read expression
-			node = NodeStmtExit{nodeExpr}
-
-			_, err = p.tryConsume(closeRoundBracket, "missing ')' after exit code")
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		_, err = p.tryConsume(semiColon, "missing ';'")
-		if err != nil {
-			return nil, err
-		}
-
-		return node, nil
-	} else if p.mustTryConsume(_var).HasValue() {
+	if p.mustTryConsume(_var).HasValue() {
 
 		tok, err := p.tryConsume(identifier, "expected variable identifier after `var`")
 		if err != nil {
@@ -565,12 +527,6 @@ type NodeProg struct {
 type NodeStmt interface {
 	IsNodeStmt()
 }
-
-type NodeStmtExit struct {
-	expr NodeExpr
-}
-
-func (NodeStmtExit) IsNodeStmt() {}
 
 type NodeStmtVarDeclare struct {
 	ident Token

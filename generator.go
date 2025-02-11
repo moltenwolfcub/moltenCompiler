@@ -147,15 +147,6 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 	output := ""
 
 	switch stmt := rawStmt.(type) {
-	case NodeStmtExit:
-		expr, err := g.GenExpr(stmt.expr)
-		if err != nil {
-			return "", err
-		}
-		output += expr
-		output += "\tmov rax, 60\n"
-		output += g.pop("rdi")
-		output += "\tsyscall\n"
 	case NodeStmtVarDeclare:
 		variableName := stmt.ident.value.MustGetValue()
 
