@@ -1,10 +1,9 @@
 $$
-\begin{align}
+\begin{align*}
 	
 	[\textcolor{red}{prog}] &\to [\textcolor{lime}{stmt}]^*
 	\\
 	[\textcolor{red}{stmt}] &\to \begin{cases}
-		\textcolor{cyan}{exit}([\textcolor{lime}{expr}]);\\
 		\textcolor{cyan}{var}\space\textcolor{yellow}{varIdent};\\
 		\textcolor{yellow}{varIdent}=[\textcolor{lime}{expr}];\\
 		[\textcolor{lime}{scope}]\\
@@ -15,6 +14,7 @@ $$
 		\textcolor{cyan}{func}\space\text{intLiteral}\space\textcolor{yellow}{funcIdent}(\textcolor{yellow}{param1},^*)[\textcolor{lime}{scope}]\\
 		[\textcolor{lime}{funcCall}];\\		
 		\textcolor{cyan}{return}\space[\textcolor{lime}{expr}],^*;\\
+		\textcolor{cyan}{syscall}([\textcolor{lime}{expr}],^*);\\
 	\end{cases}
 	\\
 	[\textcolor{red}{expr}] &\to \begin{cases}
@@ -46,7 +46,7 @@ $$
 
 	[\textcolor{red}{funcCall}] &\to \textcolor{yellow}{funcIdent}([\textcolor{lime}{expr}],^*)\\
 
-\end{align}
+\end{align*}
 $$
 
 

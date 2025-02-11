@@ -1,6 +1,25 @@
 global _start
 
 
+exit_1:
+	;=====FUNCTION SETUP=====
+	push rbp
+	mov rbp, rsp
+
+	;=====FUNCTION BODY=====
+	mov rax, 60
+	push rax
+	push QWORD [rbp + 16]
+	pop rdi
+	pop rax
+	syscall
+
+	add rsp, 0
+	;=====FUNCTION CLEANUP=====
+	pop rbp
+	ret
+
+
 num_0:
 	;=====FUNCTION SETUP=====
 	push rbp
@@ -32,9 +51,9 @@ leave_2:
 	pop rax
 	add rax, rbx
 	push rax
-	mov rax, 60
-	pop rdi
-	syscall
+	call exit_1
+	add rsp, 8
+	add rsp, 0
 
 	add rsp, 0
 	;=====FUNCTION CLEANUP=====
@@ -59,9 +78,9 @@ leave_3:
 	pop rax
 	add rax, rbx
 	push rax
-	mov rax, 60
-	pop rdi
-	syscall
+	call exit_1
+	add rsp, 8
+	add rsp, 0
 
 	add rsp, 0
 	;=====FUNCTION CLEANUP=====
@@ -152,6 +171,7 @@ test_0:
 
 
 _start:
+
 
 
 

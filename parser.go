@@ -33,45 +33,7 @@ func (p *Parser) ParseProg() (NodeProg, error) {
 }
 
 func (p *Parser) ParseStmt() (NodeStmt, error) {
-	if p.mustTryConsume(exit).HasValue() {
-		_, err := p.tryConsume(openRoundBracket, "expected '(' after 'exit'")
-		if err != nil {
-			return nil, err
-		}
-
-		var node NodeStmtExit
-
-		nodeExpr, err := p.ParseExpr()
-		if err == errMissingExpr {
-			// there isn't an expression, default to 0
-			if p.mustTryConsume(closeRoundBracket).HasValue() {
-				node = NodeStmtExit{NodeTermIntLiteral{Token{
-					tokenType: intLiteral,
-					value:     opt.ToOptional("0"),
-				}}}
-			} else {
-				return nil, errors.New("invalid expression for exit. expected exit code or ')' for default value of 0")
-			}
-		} else if err != nil {
-			// error reading expression
-			return nil, err
-		} else {
-			// read expression
-			node = NodeStmtExit{nodeExpr}
-
-			_, err = p.tryConsume(closeRoundBracket, "missing ')' after exit code")
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		_, err = p.tryConsume(semiColon, "missing ';'")
-		if err != nil {
-			return nil, err
-		}
-
-		return node, nil
-	} else if p.mustTryConsume(_var).HasValue() {
+	if p.mustTryConsume(_var).HasValue() {
 
 		tok, err := p.tryConsume(identifier, "expected variable identifier after `var`")
 		if err != nil {
@@ -246,11 +208,51 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		}
 
 		return node, nil
+
+	} else if tok := p.mustTryConsume(syscall); tok.HasValue() {
+		node := NodeStmtSyscall{syscall: tok.MustGetValue()}
+
+		_, err := p.tryConsume(openRoundBracket, "Expected '('")
+		if err != nil {
+			return nil, err
+		}
+
+		for {
+			expr, err := p.ParseExpr()
+			if err == errMissingExpr {
+				break
+			} else if err != nil {
+				return NodeStmtSyscall{}, err
+			}
+			node.arguments = append(node.arguments, expr)
+
+			_, err = p.tryConsume(comma, "optional so this should never error")
+			if err != nil {
+				break
+			}
+		}
+		if len(node.arguments) > 7 {
+			return nil, errSyscallArgs
+		}
+
+		_, err = p.tryConsume(closeRoundBracket, "Expected ')'")
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = p.tryConsume(semiColon, "missing ';'")
+		if err != nil {
+			return nil, err
+		}
+
+		return node, nil
+
 	} else {
 		return nil, errMissingStmt
 	}
 }
 
+var errSyscallArgs error = errors.New("syscalls can't have more than 7 arguments")
 var errMissingStmt error = errors.New("expected statement but couldn't find one")
 
 func (p *Parser) ParseTerm() (NodeTerm, error) {
@@ -526,12 +528,6 @@ type NodeStmt interface {
 	IsNodeStmt()
 }
 
-type NodeStmtExit struct {
-	expr NodeExpr
-}
-
-func (NodeStmtExit) IsNodeStmt() {}
-
 type NodeStmtVarDeclare struct {
 	ident Token
 }
@@ -587,6 +583,13 @@ type NodeStmtReturn struct {
 }
 
 func (NodeStmtReturn) IsNodeStmt() {}
+
+type NodeStmtSyscall struct {
+	arguments []NodeExpr
+	syscall   Token
+}
+
+func (NodeStmtSyscall) IsNodeStmt() {}
 
 type NodeExpr interface {
 	IsNodeExpr()

@@ -10,8 +10,7 @@ import (
 type TokenType int
 
 const (
-	exit TokenType = iota
-	intLiteral
+	intLiteral TokenType = iota
 	semiColon
 	openRoundBracket
 	closeRoundBracket
@@ -32,6 +31,7 @@ const (
 	_func
 	comma
 	_return
+	syscall
 )
 
 func (t TokenType) GetBinPrec() opt.Optional[int] {
@@ -168,11 +168,7 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 				buf = append(buf, t.consume())
 			}
 
-			if string(buf) == "exit" {
-				tokens = append(tokens, Token{tokenType: exit, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
-			} else if string(buf) == "var" {
+			if string(buf) == "var" {
 				tokens = append(tokens, Token{tokenType: _var, lineInfo: t.currentLineInfo})
 				t.currentLineInfo.IncWord(buf)
 				buf = []rune{}
@@ -202,6 +198,10 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 				buf = []rune{}
 			} else if string(buf) == "return" {
 				tokens = append(tokens, Token{tokenType: _return, lineInfo: t.currentLineInfo})
+				t.currentLineInfo.IncWord(buf)
+				buf = []rune{}
+			} else if string(buf) == "syscall" {
+				tokens = append(tokens, Token{tokenType: syscall, lineInfo: t.currentLineInfo})
 				t.currentLineInfo.IncWord(buf)
 				buf = []rune{}
 			} else {
