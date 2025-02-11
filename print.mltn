@@ -1,0 +1,17 @@
+func 0 print(char) {
+	syscall(1,1, &char, 1);
+}
+
+print(64+8);
+print(96+5);
+print(96+12);
+print(96+12);
+print(96+15);
+print(32);
+print(64+23);
+print(96+15);
+print(96+18);
+print(96+12);
+print(96+4);
+print(33);
+print(10);
