@@ -274,6 +274,12 @@ func (p *Parser) ParseTerm() (NodeTerm, error) {
 			return nil, err
 		}
 		return NodeTermRoundBracketExpr{expr}, nil
+	} else if p.mustTryConsume(ampersand).HasValue() {
+		variable, err := p.tryConsume(identifier, "expected variable identifier after '&'")
+		if err != nil {
+			return nil, err
+		}
+		return NodeTermPointer{variable}, nil
 	}
 	return nil, errMissingTerm
 }
@@ -666,6 +672,13 @@ type NodeTermRoundBracketExpr struct {
 
 func (NodeTermRoundBracketExpr) IsNodeTerm() {}
 func (NodeTermRoundBracketExpr) IsNodeExpr() {}
+
+type NodeTermPointer struct {
+	identifier Token
+}
+
+func (NodeTermPointer) IsNodeTerm() {}
+func (NodeTermPointer) IsNodeExpr() {}
 
 type NodeScope struct {
 	stmts []NodeStmt

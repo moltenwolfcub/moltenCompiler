@@ -32,6 +32,7 @@ const (
 	comma
 	_return
 	syscall
+	ampersand
 )
 
 func (t TokenType) GetBinPrec() opt.Optional[int] {
@@ -127,6 +128,11 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 		} else if t.peek().MustGetValue() == ',' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: comma, lineInfo: t.currentLineInfo})
+			t.currentLineInfo.IncColumn()
+
+		} else if t.peek().MustGetValue() == '&' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: ampersand, lineInfo: t.currentLineInfo})
 			t.currentLineInfo.IncColumn()
 
 		} else if t.peek().MustGetValue() == '/' {
