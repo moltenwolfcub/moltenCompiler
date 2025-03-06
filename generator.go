@@ -301,31 +301,10 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			output += expr
 		}
 
-		/* STACK
-		rdx	<- rsp
-		rsi
-		rdi
-		rax
-
-		VARIABLES
-		usedArgs := 4
-
-		pop into argRegisters[usedArgs-1]
-		iterate usedArgs to 1 so [usedArgs-1] references first index
-		*/
 		for i := usedArgs - 1; i >= 0; i-- {
 			output += g.pop(argRegisters[i])
 		}
 		output += "\tsyscall\n"
-
-		// expr, err := g.GenExpr(stmt.expr)
-		// if err != nil {
-		// 	return "", err
-		// }
-		// output += expr
-		// output += "\tmov rax, 60\n"
-		// output += g.pop("rdi")
-		// output += "\tsyscall\n"
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt))
