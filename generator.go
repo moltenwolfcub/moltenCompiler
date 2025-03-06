@@ -138,7 +138,7 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 	g.inFunc = false
 	g.functions = append(g.functions, g.currentFunction)
 	g.currentFunction = Function{}
-	g.stackSize = 0
+	g.stackSize = 0 //TODO err stack is -2 before this line is ran
 
 	return output, nil
 }
@@ -261,6 +261,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 
 		// get rid of the return values as we're not storing them
 		output += "\tadd rsp, " + fmt.Sprintf("%d", retCount*8) + "\n"
+		g.stackSize -= uint(retCount)
 
 	case NodeStmtReturn:
 		if !g.inFunc {
@@ -342,9 +343,9 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	allFunctions := append(g.functions, g.currentFunction)
 	for _, f := range allFunctions {
 		if f.name == functionName {
+			exists = true
 			if len(stmt.params) == f.parameters {
 				function = f
-				exists = true
 				foundWrong = false
 				break
 			}
@@ -375,8 +376,9 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	output += fmt.Sprintf("\tcall %s_%d\n", function.name, function.parameters)
 
 	output += "\tadd rsp, " + fmt.Sprintf("%d", len(stmt.params)*8) + "\n"
+	g.stackSize -= uint(len(stmt.params))
 
-	g.stackSize += uint(function.returnCount)
+	// Must deal with cleaning up return values from go-stack at function call-site
 
 	return output, function.returnCount, nil
 }

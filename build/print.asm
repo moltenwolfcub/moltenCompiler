@@ -29,6 +29,14 @@ print_1:
 
 _start:
 
+	mov rax, 0
+	push rax
+
+	mov rax, 96
+	push rax
+	pop rax
+	mov QWORD [rsp + 0], rax
+
 	mov rax, 64
 	push rax
 	mov rax, 8
@@ -41,8 +49,7 @@ _start:
 	add rsp, 8
 	add rsp, 0
 
-	mov rax, 96
-	push rax
+	push QWORD [rsp + 8]
 	mov rax, 5
 	push rax
 	pop rbx
@@ -53,8 +60,7 @@ _start:
 	add rsp, 8
 	add rsp, 0
 
-	mov rax, 96
-	push rax
+	push QWORD [rsp + 16]
 	mov rax, 12
 	push rax
 	pop rbx
@@ -65,8 +71,7 @@ _start:
 	add rsp, 8
 	add rsp, 0
 
-	mov rax, 96
-	push rax
+	push QWORD [rsp + 24]
 	mov rax, 12
 	push rax
 	pop rbx
@@ -77,8 +82,7 @@ _start:
 	add rsp, 8
 	add rsp, 0
 
-	mov rax, 96
-	push rax
+	push QWORD [rsp + 32]
 	mov rax, 15
 	push rax
 	pop rbx
@@ -107,8 +111,7 @@ _start:
 	add rsp, 8
 	add rsp, 0
 
-	mov rax, 96
-	push rax
+	push QWORD [rsp + 56]
 	mov rax, 15
 	push rax
 	pop rbx
@@ -119,8 +122,7 @@ _start:
 	add rsp, 8
 	add rsp, 0
 
-	mov rax, 96
-	push rax
+	push QWORD [rsp + 64]
 	mov rax, 18
 	push rax
 	pop rbx
@@ -131,8 +133,7 @@ _start:
 	add rsp, 8
 	add rsp, 0
 
-	mov rax, 96
-	push rax
+	push QWORD [rsp + 72]
 	mov rax, 12
 	push rax
 	pop rbx
@@ -143,8 +144,7 @@ _start:
 	add rsp, 8
 	add rsp, 0
 
-	mov rax, 96
-	push rax
+	push QWORD [rsp + 80]
 	mov rax, 4
 	push rax
 	pop rbx
