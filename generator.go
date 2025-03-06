@@ -132,7 +132,7 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 		output += "\t;=====FUNCTION CLEANUP=====\n"
 	}
 
-	output += g.pop("rbp") //TODO this is being called twice if return is present so g.stackSize goes negative
+	output += g.pop("rbp")
 
 	output += "\tret\n"
 
