@@ -1,12 +1,12 @@
 func 1 test(v) {
-	//var t;
-	//t = v;
-	return 1;
+	var t;
+	t = v;
+	return t;
 }
 
 var hi;
 hi = 15;
 
-test(5);
+var k; k = test(5);
 
-syscall(60,hi);
+syscall(60,k);

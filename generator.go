@@ -119,6 +119,7 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 			stackLoc:    uint(i + 2),
 		}
 		parameters = append(parameters, v)
+		g.stackSize++
 	}
 
 	body, err := g.GenFunctionBody(stmt.body, parameters)
@@ -131,14 +132,14 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 		output += "\t;=====FUNCTION CLEANUP=====\n"
 	}
 
-	output += g.pop("rbp")
+	output += g.pop("rbp") //TODO this is being called twice if return is present so g.stackSize goes negative
 
 	output += "\tret\n"
 
 	g.inFunc = false
 	g.functions = append(g.functions, g.currentFunction)
 	g.currentFunction = Function{}
-	g.stackSize = 0 //TODO err stack is -2 before this line is ran
+	g.stackSize = 0
 
 	return output, nil
 }
@@ -285,7 +286,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		}
 
 		output += g.exitFunction(false)
-		output += g.pop("rbp")
+		output += "\tpop rbp\n" //g.pop("rbp")
 		output += "\tret\n"
 
 	case NodeStmtSyscall:
