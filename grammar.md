@@ -23,6 +23,7 @@ $$
 	\end{cases}
 	\\
 	[\textcolor{red}{binExpr}] &\to \begin{cases}
+		[\textcolor{lime}{expr}]\%[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
 		[\textcolor{lime}{expr}]*[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
 		[\textcolor{lime}{expr}]/[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
 		[\textcolor{lime}{expr}]+[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\

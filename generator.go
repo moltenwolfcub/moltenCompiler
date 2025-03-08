@@ -470,6 +470,23 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += g.pop("rax")
 		output += "\tdiv rbx\n"
 		output += g.push("rax")
+	case NodeBinExprModulo:
+		expr, err := g.GenExpr(binExpr.left)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+		expr, err = g.GenExpr(binExpr.right)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+
+		output += g.pop("rbx")
+		output += g.pop("rax")
+		output += "\tmov rdx, 0\n"
+		output += "\tdiv rbx\n"
+		output += g.push("rdx")
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate binary expression: %T", rawBinExpr))
 	}

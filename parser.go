@@ -466,6 +466,11 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
+		case percent:
+			expr = NodeBinExprModulo{
+				left:  lhsExpr,
+				right: rhsExpr,
+			}
 		}
 		lhsExpr = expr
 
@@ -631,6 +636,14 @@ type NodeBinExprDivide struct {
 
 func (NodeBinExprDivide) IsNodeBinExpr() {}
 func (NodeBinExprDivide) IsNodeExpr()    {}
+
+type NodeBinExprModulo struct {
+	left  NodeExpr
+	right NodeExpr
+}
+
+func (NodeBinExprModulo) IsNodeBinExpr() {}
+func (NodeBinExprModulo) IsNodeExpr()    {}
 
 type NodeTerm interface {
 	NodeExpr

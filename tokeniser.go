@@ -21,6 +21,7 @@ const (
 	asterisk
 	minus
 	fslash
+	percent
 	openCurlyBracket
 	closeCurlyBracket
 	_if
@@ -38,7 +39,7 @@ func (t TokenType) GetBinPrec() opt.Optional[int] {
 	switch t {
 	case plus, minus:
 		return opt.ToOptional(0)
-	case asterisk, fslash:
+	case asterisk, fslash, percent:
 		return opt.ToOptional(1)
 	default:
 		return opt.Optional[int]{}
@@ -122,6 +123,11 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 		} else if t.peek().MustGetValue() == '-' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: minus, lineInfo: t.currentLineInfo})
+			t.currentLineInfo.IncColumn()
+
+		} else if t.peek().MustGetValue() == '%' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: percent, lineInfo: t.currentLineInfo})
 			t.currentLineInfo.IncColumn()
 
 		} else if t.peek().MustGetValue() == ',' {

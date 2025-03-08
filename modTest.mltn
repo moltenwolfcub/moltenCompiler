@@ -1,0 +1,13 @@
+var a;
+a=11;
+
+var b;
+b=3;
+
+var c;
+c=a%b;
+
+var d;
+d=a%c;
+
+syscall(60, d);
