@@ -4,4 +4,9 @@ age = 5;
 var ptr;
 ptr = &age;
 
-syscall(60, ptr);
+var newAge;
+newAge = *ptr + 5;
+
+age = newAge;
+
+syscall(60, *ptr);

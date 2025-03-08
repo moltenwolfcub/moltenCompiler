@@ -530,6 +530,32 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 		}
 		output += g.push("rax")
 
+	case NodeTermPointerDereference:
+		variableName := term.identifier.value.MustGetValue()
+
+		var variable Variable
+		exists := false
+		for _, v := range g.variables {
+			if v.name == variableName {
+				variable = v
+				exists = true
+			}
+		}
+
+		if !exists {
+			return "", term.identifier.lineInfo.PositionedError(fmt.Sprintf("undefined variable: %v", variableName))
+		}
+
+		if variable.isParameter {
+			output += "\tmov rax, [rbp + " + fmt.Sprint(variable.stackLoc*8) + "]\n"
+		} else {
+			output += "\tmov rax, [rsp + " + fmt.Sprint((g.stackSize-variable.stackLoc-1)*8) + "]\n"
+		}
+
+		output += "\tmov rax, [rax]\n"
+
+		output += g.push("rax")
+
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate term: %T", rawTerm))
 	}

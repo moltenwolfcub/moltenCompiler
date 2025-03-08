@@ -280,6 +280,12 @@ func (p *Parser) ParseTerm() (NodeTerm, error) {
 			return nil, err
 		}
 		return NodeTermPointer{variable}, nil
+	} else if p.mustTryConsume(asterisk).HasValue() {
+		variable, err := p.tryConsume(identifier, "expected variable identifier after '*'")
+		if err != nil {
+			return nil, err
+		}
+		return NodeTermPointerDereference{variable}, nil
 	}
 	return nil, errMissingTerm
 }
@@ -679,6 +685,13 @@ type NodeTermPointer struct {
 
 func (NodeTermPointer) IsNodeTerm() {}
 func (NodeTermPointer) IsNodeExpr() {}
+
+type NodeTermPointerDereference struct {
+	identifier Token
+}
+
+func (NodeTermPointerDereference) IsNodeTerm() {}
+func (NodeTermPointerDereference) IsNodeExpr() {}
 
 type NodeScope struct {
 	stmts []NodeStmt
