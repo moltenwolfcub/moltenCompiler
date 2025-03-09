@@ -18,6 +18,19 @@ _start:
 	pop rax
 	mov QWORD [rsp + 0], rax
 
+	mov rax, [rsp + 0]
+	mov rax, [rax]
+	push rax
+	mov rax, 3
+	push rax
+	pop rbx
+	pop rax
+	add rax, rbx
+	push rax
+	pop rax
+	mov rbx, [rsp + 0]
+	mov QWORD [rbx], rax
+
 	mov rax, 0
 	push rax
 

@@ -87,6 +87,34 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		default:
 			return nil, errors.New("expected '=' or '()' after identifier for variable assignment or function call")
 		}
+	} else if p.mustTryConsume(asterisk).HasValue() {
+		tok, err := p.tryConsume(identifier, "expected variable identifier after '*'")
+		if err != nil {
+			return nil, err
+		}
+
+		node := NodeStmtPointerAssign{
+			ident: tok,
+		}
+
+		_, err = p.tryConsume(equals, "expected '=' after identifier for pointer assignment")
+		if err != nil {
+			return nil, err
+		}
+
+		expr, err := p.ParseExpr()
+		if err != nil {
+			return nil, err
+		}
+		node.expr = expr
+
+		_, err = p.tryConsume(semiColon, "missing ';'")
+		if err != nil {
+			return nil, err
+		}
+
+		return node, nil
+
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == openCurlyBracket {
 		scope, err := p.ParseScope()
 		if err != nil {
@@ -552,6 +580,13 @@ type NodeStmtVarAssign struct {
 }
 
 func (NodeStmtVarAssign) IsNodeStmt() {}
+
+type NodeStmtPointerAssign struct {
+	ident Token
+	expr  NodeExpr
+}
+
+func (NodeStmtPointerAssign) IsNodeStmt() {}
 
 type NodeStmtIf struct {
 	expr       NodeExpr

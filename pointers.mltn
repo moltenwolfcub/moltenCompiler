@@ -4,6 +4,8 @@ age = 5;
 var ptr;
 ptr = &age;
 
+*ptr = *ptr + 3;
+
 var newAge;
 newAge = *ptr + 5;
 

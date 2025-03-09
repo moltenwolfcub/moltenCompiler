@@ -188,6 +188,34 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			output += fmt.Sprintf("\tmov QWORD [rsp + %v], rax\n", (g.stackSize-variable.stackLoc-1)*8)
 		}
 
+	case NodeStmtPointerAssign:
+		variableName := stmt.ident.value.MustGetValue()
+		var variable Variable
+		exists := false
+		for _, v := range g.variables {
+			if v.name == variableName {
+				variable = v
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined variable: '%s'", variableName))
+		}
+
+		expr, err := g.GenExpr(stmt.expr)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+		output += g.pop("rax")
+		if variable.isParameter {
+			output += fmt.Sprintf("\tmov rbx, [rbp + %v]\n", variable.stackLoc*8)
+		} else {
+			output += fmt.Sprintf("\tmov rbx, [rsp + %v]\n", (g.stackSize-variable.stackLoc-1)*8)
+		}
+		output += "\tmov QWORD [rbx], rax\n"
+
 	case NodeScope:
 		scope, err := g.GenScope(stmt)
 		if err != nil {
