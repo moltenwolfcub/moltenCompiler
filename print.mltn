@@ -1,0 +1,23 @@
+func 0 print(char) {
+	syscall(1,1, &char, 1);
+}
+
+var LOWER;
+LOWER = 96;
+
+var UPPER;
+UPPER = 64;
+
+print(UPPER+8);
+print(LOWER+5);
+print(LOWER+12);
+print(LOWER+12);
+print(LOWER+15);
+print(32);
+print(UPPER+23);
+print(LOWER+15);
+print(LOWER+18);
+print(LOWER+12);
+print(LOWER+4);
+print(33);
+print(10);

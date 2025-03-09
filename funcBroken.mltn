@@ -1,0 +1,12 @@
+func 1 test(v) {
+	var t;
+	t = v;
+	return t;
+}
+
+var hi;
+hi = 15;
+
+var k; k = test(5);
+
+syscall(60,k);

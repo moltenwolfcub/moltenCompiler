@@ -119,6 +119,7 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 			stackLoc:    uint(i + 2),
 		}
 		parameters = append(parameters, v)
+		g.stackSize++
 	}
 
 	body, err := g.GenFunctionBody(stmt.body, parameters)
@@ -186,6 +187,34 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		} else {
 			output += fmt.Sprintf("\tmov QWORD [rsp + %v], rax\n", (g.stackSize-variable.stackLoc-1)*8)
 		}
+
+	case NodeStmtPointerAssign:
+		variableName := stmt.ident.value.MustGetValue()
+		var variable Variable
+		exists := false
+		for _, v := range g.variables {
+			if v.name == variableName {
+				variable = v
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined variable: '%s'", variableName))
+		}
+
+		expr, err := g.GenExpr(stmt.expr)
+		if err != nil {
+			return "", err
+		}
+		output += expr
+		output += g.pop("rax")
+		if variable.isParameter {
+			output += fmt.Sprintf("\tmov rbx, [rbp + %v]\n", variable.stackLoc*8)
+		} else {
+			output += fmt.Sprintf("\tmov rbx, [rsp + %v]\n", (g.stackSize-variable.stackLoc-1)*8)
+		}
+		output += "\tmov QWORD [rbx], rax\n"
 
 	case NodeScope:
 		scope, err := g.GenScope(stmt)
@@ -261,6 +290,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 
 		// get rid of the return values as we're not storing them
 		output += "\tadd rsp, " + fmt.Sprintf("%d", retCount*8) + "\n"
+		g.stackSize -= uint(retCount)
 
 	case NodeStmtReturn:
 		if !g.inFunc {
@@ -284,7 +314,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		}
 
 		output += g.exitFunction(false)
-		output += g.pop("rbp")
+		output += "\tpop rbp\n" //g.pop("rbp")
 		output += "\tret\n"
 
 	case NodeStmtSyscall:
@@ -299,31 +329,10 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			output += expr
 		}
 
-		/* STACK
-		rdx	<- rsp
-		rsi
-		rdi
-		rax
-
-		VARIABLES
-		usedArgs := 4
-
-		pop into argRegisters[usedArgs-1]
-		iterate usedArgs to 1 so [usedArgs-1] references first index
-		*/
 		for i := usedArgs - 1; i >= 0; i-- {
 			output += g.pop(argRegisters[i])
 		}
 		output += "\tsyscall\n"
-
-		// expr, err := g.GenExpr(stmt.expr)
-		// if err != nil {
-		// 	return "", err
-		// }
-		// output += expr
-		// output += "\tmov rax, 60\n"
-		// output += g.pop("rdi")
-		// output += "\tsyscall\n"
 
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate statement: %T", rawStmt))
@@ -342,9 +351,9 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	allFunctions := append(g.functions, g.currentFunction)
 	for _, f := range allFunctions {
 		if f.name == functionName {
+			exists = true
 			if len(stmt.params) == f.parameters {
 				function = f
-				exists = true
 				foundWrong = false
 				break
 			}
@@ -375,8 +384,9 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	output += fmt.Sprintf("\tcall %s_%d\n", function.name, function.parameters)
 
 	output += "\tadd rsp, " + fmt.Sprintf("%d", len(stmt.params)*8) + "\n"
+	g.stackSize -= uint(len(stmt.params))
 
-	g.stackSize += uint(function.returnCount)
+	// Must deal with cleaning up return values from go-stack at function call-site
 
 	return output, function.returnCount, nil
 }
@@ -541,6 +551,56 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 			return "", err
 		}
 		output += expr
+
+	case NodeTermPointer:
+		variableName := term.identifier.value.MustGetValue()
+
+		var variable Variable
+		exists := false
+		for _, v := range g.variables {
+			if v.name == variableName {
+				variable = v
+				exists = true
+			}
+		}
+
+		if !exists {
+			return "", term.identifier.lineInfo.PositionedError(fmt.Sprintf("undefined variable: %v", variableName))
+		}
+
+		if variable.isParameter {
+			output += "\tlea rax, QWORD [rbp + " + fmt.Sprint(variable.stackLoc*8) + "]\n"
+		} else {
+			output += "\tlea rax, QWORD [rsp + " + fmt.Sprint((g.stackSize-variable.stackLoc-1)*8) + "]\n"
+		}
+		output += g.push("rax")
+
+	case NodeTermPointerDereference:
+		variableName := term.identifier.value.MustGetValue()
+
+		var variable Variable
+		exists := false
+		for _, v := range g.variables {
+			if v.name == variableName {
+				variable = v
+				exists = true
+			}
+		}
+
+		if !exists {
+			return "", term.identifier.lineInfo.PositionedError(fmt.Sprintf("undefined variable: %v", variableName))
+		}
+
+		if variable.isParameter {
+			output += "\tmov rax, [rbp + " + fmt.Sprint(variable.stackLoc*8) + "]\n"
+		} else {
+			output += "\tmov rax, [rsp + " + fmt.Sprint((g.stackSize-variable.stackLoc-1)*8) + "]\n"
+		}
+
+		output += "\tmov rax, [rax]\n"
+
+		output += g.push("rax")
+
 	default:
 		panic(fmt.Errorf("generator error: don't know how to generate term: %T", rawTerm))
 	}

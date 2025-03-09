@@ -87,6 +87,34 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		default:
 			return nil, errors.New("expected '=' or '()' after identifier for variable assignment or function call")
 		}
+	} else if p.mustTryConsume(asterisk).HasValue() {
+		tok, err := p.tryConsume(identifier, "expected variable identifier after '*'")
+		if err != nil {
+			return nil, err
+		}
+
+		node := NodeStmtPointerAssign{
+			ident: tok,
+		}
+
+		_, err = p.tryConsume(equals, "expected '=' after identifier for pointer assignment")
+		if err != nil {
+			return nil, err
+		}
+
+		expr, err := p.ParseExpr()
+		if err != nil {
+			return nil, err
+		}
+		node.expr = expr
+
+		_, err = p.tryConsume(semiColon, "missing ';'")
+		if err != nil {
+			return nil, err
+		}
+
+		return node, nil
+
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == openCurlyBracket {
 		scope, err := p.ParseScope()
 		if err != nil {
@@ -274,6 +302,18 @@ func (p *Parser) ParseTerm() (NodeTerm, error) {
 			return nil, err
 		}
 		return NodeTermRoundBracketExpr{expr}, nil
+	} else if p.mustTryConsume(ampersand).HasValue() {
+		variable, err := p.tryConsume(identifier, "expected variable identifier after '&'")
+		if err != nil {
+			return nil, err
+		}
+		return NodeTermPointer{variable}, nil
+	} else if p.mustTryConsume(asterisk).HasValue() {
+		variable, err := p.tryConsume(identifier, "expected variable identifier after '*'")
+		if err != nil {
+			return nil, err
+		}
+		return NodeTermPointerDereference{variable}, nil
 	}
 	return nil, errMissingTerm
 }
@@ -546,6 +586,13 @@ type NodeStmtVarAssign struct {
 
 func (NodeStmtVarAssign) IsNodeStmt() {}
 
+type NodeStmtPointerAssign struct {
+	ident Token
+	expr  NodeExpr
+}
+
+func (NodeStmtPointerAssign) IsNodeStmt() {}
+
 type NodeStmtIf struct {
 	expr       NodeExpr
 	scope      NodeScope
@@ -679,6 +726,20 @@ type NodeTermRoundBracketExpr struct {
 
 func (NodeTermRoundBracketExpr) IsNodeTerm() {}
 func (NodeTermRoundBracketExpr) IsNodeExpr() {}
+
+type NodeTermPointer struct {
+	identifier Token
+}
+
+func (NodeTermPointer) IsNodeTerm() {}
+func (NodeTermPointer) IsNodeExpr() {}
+
+type NodeTermPointerDereference struct {
+	identifier Token
+}
+
+func (NodeTermPointerDereference) IsNodeTerm() {}
+func (NodeTermPointerDereference) IsNodeExpr() {}
 
 type NodeScope struct {
 	stmts []NodeStmt

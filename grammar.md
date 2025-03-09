@@ -6,6 +6,7 @@ $$
 	[\textcolor{red}{stmt}] &\to \begin{cases}
 		\textcolor{cyan}{var}\space\textcolor{yellow}{varIdent};\\
 		\textcolor{yellow}{varIdent}=[\textcolor{lime}{expr}];\\
+		*\textcolor{yellow}{varIdent}=[\textcolor{lime}{expr}];\\
 		[\textcolor{lime}{scope}]\\
 		[\textcolor{lime}{if}]\\
 		\textcolor{cyan}{while}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
@@ -34,7 +35,9 @@ $$
 		\text{intLiteral}\\
 		\textcolor{yellow}{varIdent}\\
 		([\textcolor{lime}{expr}])\\
-		[\textcolor{lime}{funcCall}]
+		[\textcolor{lime}{funcCall}]\\
+		\&\textcolor{yellow}{varIdent}\\
+		*\textcolor{yellow}{varIdent}\\
 	\end{cases}
 	\\
 	[\textcolor{red}{scope}] &\to \{[\textcolor{lime}{stmt}]^*\}
