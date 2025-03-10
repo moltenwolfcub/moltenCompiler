@@ -478,6 +478,7 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 
 		output += g.pop("rbx")
 		output += g.pop("rax")
+		output += "\tmov rdx, 0\n"
 		output += "\tdiv rbx\n"
 		output += g.push("rax")
 	case NodeBinExprModulo:
