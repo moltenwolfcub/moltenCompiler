@@ -17,7 +17,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	program, err := loadProgram(os.Args[1])
+	program, err := loadProgram("code/" + os.Args[1])
 	if err != nil {
 		fmt.Println(err.Error())
 		return
