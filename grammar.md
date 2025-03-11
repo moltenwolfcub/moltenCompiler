@@ -1,10 +1,28 @@
+#### Variable syntax
+```
+access var name type;
+private var score int;
+score = 5;
+
+score := 5 (assume private when using :=)
+```
+
+#### Function syntax
+```
+func modifiers <generics> Tr1, Tr2 f(a, b) {}
+func public const <T implements Comparable> (T, int, error) num(T trait, string name) {
+	return 22;
+}
+```
+### Grammar
+
 $$
 \begin{align*}
 	
 	[\textcolor{red}{prog}] &\to [\textcolor{lime}{stmt}]^*
 	\\
 	[\textcolor{red}{stmt}] &\to \begin{cases}
-		\textcolor{cyan}{var}\space\textcolor{yellow}{varIdent};\\
+		\textcolor{cyan}{var}\space\textcolor{yellow}{varIdent}\space[\textcolor{orange}{type}];\\
 		\textcolor{yellow}{varIdent}=[\textcolor{lime}{expr}];\\
 		*\textcolor{yellow}{varIdent}=[\textcolor{lime}{expr}];\\
 		[\textcolor{lime}{scope}]\\
@@ -53,22 +71,21 @@ $$
 \end{align*}
 $$
 
+$$
+\begin{align*}
 
-### Tmp:
+	[\textcolor{orange}{type}] &\to \begin{cases}
+		[\textcolor{orange}{baseType}]\\
+		*[\textcolor{orange}{baseType}]\\
+	\end{cases}
+	\\
+	[\textcolor{orange}{baseType}] &\to \begin{cases}
+		\textcolor{cyan}{bool}\\
+		\textcolor{cyan}{int}\\
+		\textcolor{cyan}{char}\\
+	\end{cases}
+	\\
 
-#### Variable syntax
-```
-access var name type;
-private var score int;
-score = 5;
+\end{align*}
+$$
 
-score := 5 (assume private when using :=)
-```
-
-#### Function syntax
-```
-func modifiers <generics> Tr1, Tr2 f(a, b) {}
-func public const <T implements Comparable> (T, int, error) num(T trait, string name) {
-	return 22;
-}
-```
