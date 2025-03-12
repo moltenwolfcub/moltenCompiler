@@ -182,45 +182,27 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 
 			if string(buf) == "var" {
 				tokens = append(tokens, Token{tokenType: _var, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			} else if string(buf) == "if" {
 				tokens = append(tokens, Token{tokenType: _if, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			} else if string(buf) == "while" {
 				tokens = append(tokens, Token{tokenType: while, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			} else if string(buf) == "else" {
 				tokens = append(tokens, Token{tokenType: _else, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			} else if string(buf) == "break" {
 				tokens = append(tokens, Token{tokenType: _break, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			} else if string(buf) == "continue" {
 				tokens = append(tokens, Token{tokenType: _continue, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			} else if string(buf) == "func" {
 				tokens = append(tokens, Token{tokenType: _func, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			} else if string(buf) == "return" {
 				tokens = append(tokens, Token{tokenType: _return, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			} else if string(buf) == "syscall" {
 				tokens = append(tokens, Token{tokenType: syscall, lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			} else {
 				tokens = append(tokens, Token{tokenType: identifier, value: opt.ToOptional(string(buf)), lineInfo: t.currentLineInfo})
-				t.currentLineInfo.IncWord(buf)
-				buf = []rune{}
 			}
+			t.currentLineInfo.IncWord(buf)
+			buf = []rune{}
 
 		} else if unicode.IsDigit(t.peek().MustGetValue()) {
 			buf = append(buf, t.consume())
