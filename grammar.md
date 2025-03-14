@@ -30,7 +30,7 @@ $$
 		\textcolor{cyan}{while}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
 		\textcolor{cyan}{break};\\
 		\textcolor{cyan}{continue};\\
-		\textcolor{cyan}{func}\space\text{intLiteral}\space\textcolor{yellow}{funcIdent}(\textcolor{yellow}{param1},^*)[\textcolor{lime}{scope}]\\
+		\textcolor{cyan}{func}\space\text{intLiteral}\space\textcolor{yellow}{funcIdent}(\textcolor{yellow}{param1}\space[\textcolor{orange}{type}],^*)[\textcolor{lime}{scope}]\\
 		[\textcolor{lime}{funcCall}];\\		
 		\textcolor{cyan}{return}\space[\textcolor{lime}{expr}],^*;\\
 		\textcolor{cyan}{syscall}([\textcolor{lime}{expr}],^*);\\
