@@ -306,6 +306,80 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 var errSyscallArgs error = errors.New("syscalls can't have more than 7 arguments")
 var errMissingStmt error = errors.New("expected statement but couldn't find one")
 
+// based off of this principle and algorithm:
+// https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing
+func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
+	var minPrec int
+	if len(minPrecedence) == 1 {
+		minPrec = minPrecedence[0]
+	} else {
+		minPrec = 0
+	}
+
+	lhsTerm, err := p.ParseTerm()
+	if err == errMissingTerm {
+		return nil, errMissingExpr
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	lhsExpr := NodeExpr(lhsTerm)
+
+	for {
+		currentToken := p.peek()
+		if !currentToken.HasValue() {
+			break
+		}
+		currentPrec := currentToken.MustGetValue().tokenType.GetBinPrec()
+		if !currentPrec.HasValue() || currentPrec.MustGetValue() < minPrec { //prolly meant to be <=
+			break
+		}
+		op := p.consume()
+
+		nextMinPrec := currentPrec.MustGetValue() + 1
+
+		rhsExpr, err := p.ParseExpr(nextMinPrec)
+		if err != nil {
+			return nil, err
+		}
+
+		var expr NodeBinExpr
+		switch op.tokenType {
+		case plus:
+			expr = NodeBinExprAdd{
+				left:  lhsExpr,
+				right: rhsExpr,
+			}
+		case asterisk:
+			expr = NodeBinExprMultiply{
+				left:  lhsExpr,
+				right: rhsExpr,
+			}
+		case minus:
+			expr = NodeBinExprSubtract{
+				left:  lhsExpr,
+				right: rhsExpr,
+			}
+		case fslash:
+			expr = NodeBinExprDivide{
+				left:  lhsExpr,
+				right: rhsExpr,
+			}
+		case percent:
+			expr = NodeBinExprModulo{
+				left:  lhsExpr,
+				right: rhsExpr,
+			}
+		}
+		lhsExpr = expr
+
+	}
+	return lhsExpr, nil
+}
+
+var errMissingExpr error = errors.New("expected expression")
+
 func (p *Parser) ParseTerm() (NodeTerm, error) {
 	if tok := p.mustTryConsume(intLiteral); tok.HasValue() {
 		return NodeTermIntLiteral{tok.MustGetValue()}, nil
@@ -342,40 +416,6 @@ func (p *Parser) ParseTerm() (NodeTerm, error) {
 }
 
 var errMissingTerm error = errors.New("expected term but couldn't find one")
-
-func (p *Parser) ParseFuncCall() (NodeFunctionCall, error) {
-
-	node := NodeFunctionCall{
-		ident: p.consume(),
-	}
-
-	_, err := p.tryConsume(openRoundBracket, "missing '('")
-	if err != nil {
-		return NodeFunctionCall{}, err
-	}
-
-	for {
-		expr, err := p.ParseExpr()
-		if err == errMissingExpr {
-			break
-		} else if err != nil {
-			return NodeFunctionCall{}, err
-		}
-		node.params = append(node.params, expr)
-
-		_, err = p.tryConsume(comma, "optional so this should never error")
-		if err != nil {
-			break
-		}
-	}
-
-	_, err = p.tryConsume(closeRoundBracket, "missing ')'")
-	if err != nil {
-		return NodeFunctionCall{}, err
-	}
-
-	return node, nil
-}
 
 func (p *Parser) ParseScope() (NodeScope, error) {
 	if !p.mustTryConsume(openCurlyBracket).HasValue() {
@@ -469,79 +509,39 @@ func (p *Parser) ParseElse() (opt.Optional[NodeElse], error) {
 	}
 }
 
-// based off of this principle and algorithm:
-// https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing
-func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
-	var minPrec int
-	if len(minPrecedence) == 1 {
-		minPrec = minPrecedence[0]
-	} else {
-		minPrec = 0
+func (p *Parser) ParseFuncCall() (NodeFunctionCall, error) {
+
+	node := NodeFunctionCall{
+		ident: p.consume(),
 	}
 
-	lhsTerm, err := p.ParseTerm()
-	if err == errMissingTerm {
-		return nil, errMissingExpr
-	}
+	_, err := p.tryConsume(openRoundBracket, "missing '('")
 	if err != nil {
-		return nil, err
+		return NodeFunctionCall{}, err
 	}
-
-	lhsExpr := NodeExpr(lhsTerm)
 
 	for {
-		currentToken := p.peek()
-		if !currentToken.HasValue() {
+		expr, err := p.ParseExpr()
+		if err == errMissingExpr {
 			break
+		} else if err != nil {
+			return NodeFunctionCall{}, err
 		}
-		currentPrec := currentToken.MustGetValue().tokenType.GetBinPrec()
-		if !currentPrec.HasValue() || currentPrec.MustGetValue() < minPrec { //prolly meant to be <=
-			break
-		}
-		op := p.consume()
+		node.params = append(node.params, expr)
 
-		nextMinPrec := currentPrec.MustGetValue() + 1
-
-		rhsExpr, err := p.ParseExpr(nextMinPrec)
+		_, err = p.tryConsume(comma, "optional so this should never error")
 		if err != nil {
-			return nil, err
+			break
 		}
-
-		var expr NodeBinExpr
-		switch op.tokenType {
-		case plus:
-			expr = NodeBinExprAdd{
-				left:  lhsExpr,
-				right: rhsExpr,
-			}
-		case asterisk:
-			expr = NodeBinExprMultiply{
-				left:  lhsExpr,
-				right: rhsExpr,
-			}
-		case minus:
-			expr = NodeBinExprSubtract{
-				left:  lhsExpr,
-				right: rhsExpr,
-			}
-		case fslash:
-			expr = NodeBinExprDivide{
-				left:  lhsExpr,
-				right: rhsExpr,
-			}
-		case percent:
-			expr = NodeBinExprModulo{
-				left:  lhsExpr,
-				right: rhsExpr,
-			}
-		}
-		lhsExpr = expr
-
 	}
-	return lhsExpr, nil
-}
 
-var errMissingExpr error = errors.New("expected expression")
+	_, err = p.tryConsume(closeRoundBracket, "missing ')'")
+	if err != nil {
+		return NodeFunctionCall{}, err
+	}
+
+	return node, nil
+}
 
 func (p *Parser) ParseType() (NodeType, error) {
 	if tok := p.mustTryConsume(asterisk); tok.HasValue() {
