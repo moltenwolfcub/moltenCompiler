@@ -1,0 +1,15 @@
+var age int;
+age = 16;
+
+var otherage int;
+otherage = getAge(age, 16);
+
+var question bool;
+question = 0;
+
+var letter char;
+letter = 65;
+
+func 1 getAge(given int, offset int){
+	return given + offset;
+}

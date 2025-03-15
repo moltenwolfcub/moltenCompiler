@@ -101,9 +101,29 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("function identifier already used: %v", functionName))
 		}
 	}
-	g.currentFunction = Function{name: functionName, parameters: len(stmt.params), returnCount: returnCount}
+	g.currentFunction = Function{
+		name:        functionName,
+		returnCount: returnCount,
+	}
 
-	output += fmt.Sprintf("%s_%d:\n", functionName, len(stmt.params))
+	typeSignature := ""
+	paramTypes := []_Type{}
+	for _, p := range stmt.params {
+		t, err := _typeFromNodeType(p._type)
+		if err != nil {
+			return "", stmt.ident.lineInfo.PositionedError(err.Error())
+		}
+
+		paramTypes = append(paramTypes, t)
+		typeSignature += t.getType() + "."
+	}
+
+	g.currentFunction.parameters = paramTypes
+
+	signature := fmt.Sprintf("%s_%s", functionName, typeSignature)
+	g.currentFunction.signature = signature
+
+	output += fmt.Sprintf("%s:\n", signature)
 
 	if g.genASMComments {
 		output += "\t;=====FUNCTION SETUP=====\n"
@@ -113,10 +133,16 @@ func (g *Generator) GenFuncDefinition(stmt NodeStmtFunctionDefinition) (string, 
 
 	parameters := []Variable{}
 	for i, p := range stmt.params {
+		t, err := _typeFromNodeType(p._type)
+		if err != nil {
+			return "", stmt.ident.lineInfo.PositionedError(err.Error())
+		}
+
 		v := Variable{
 			isParameter: true,
-			name:        p.value.MustGetValue(),
+			name:        p.ident.value.MustGetValue(),
 			stackLoc:    uint(i + 2),
+			_type:       t,
 		}
 		parameters = append(parameters, v)
 		g.stackSize++
@@ -149,15 +175,24 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 
 	switch stmt := rawStmt.(type) {
 	case NodeStmtVarDeclare:
-		variableName := stmt.ident.value.MustGetValue()
+		variableName := stmt.value.ident.value.MustGetValue()
 
 		for _, v := range g.variables {
 			if v.name == variableName {
-				return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("variable identifier already used: %v", variableName))
+				return "", stmt.value.ident.lineInfo.PositionedError(fmt.Sprintf("variable identifier already used: %v", variableName))
 			}
 		}
 
-		g.variables = append(g.variables, Variable{stackLoc: g.stackSize, name: variableName})
+		t, err := _typeFromNodeType(stmt.value._type)
+		if err != nil {
+			return "", stmt.value.ident.lineInfo.PositionedError(err.Error())
+		}
+
+		g.variables = append(g.variables, Variable{
+			stackLoc: g.stackSize,
+			name:     variableName,
+			_type:    t,
+		})
 		output += "\tmov rax, 0\n" //set a default starting value
 		output += g.push("rax")
 
@@ -308,7 +343,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			}
 			output += expr
 
-			stackOffset := (g.currentFunction.parameters + i + 2) * 8
+			stackOffset := (len(g.currentFunction.parameters) + i + 2) * 8
 
 			output += g.pop(fmt.Sprintf("QWORD [rbp + %v]", stackOffset))
 		}
@@ -352,7 +387,7 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	for _, f := range allFunctions {
 		if f.name == functionName {
 			exists = true
-			if len(stmt.params) == f.parameters {
+			if len(stmt.params) == len(f.parameters) {
 				function = f
 				foundWrong = false
 				break
@@ -381,7 +416,7 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 		output += expr
 	}
 
-	output += fmt.Sprintf("\tcall %s_%d\n", function.name, function.parameters)
+	output += fmt.Sprintf("\tcall %s\n", function.signature)
 
 	output += "\tadd rsp, " + fmt.Sprintf("%d", len(stmt.params)*8) + "\n"
 	g.stackSize -= uint(len(stmt.params))
@@ -745,7 +780,7 @@ func (g *Generator) endScope() string {
 	return output
 }
 func (g *Generator) exitFunction(updateLocal bool) string {
-	targetVariableCount := g.scopes[g.currentFunction.scopeIndex] + g.currentFunction.parameters
+	targetVariableCount := g.scopes[g.currentFunction.scopeIndex] + len(g.currentFunction.parameters)
 	popCount := len(g.variables) - targetVariableCount
 
 	// localPopCount := len(g.variables) - g.scopes[len(g.scopes)-1]
@@ -756,7 +791,7 @@ func (g *Generator) exitFunction(updateLocal bool) string {
 	// popCount := localPopCount - paramCount
 
 	if updateLocal {
-		localPopCount := popCount + g.currentFunction.parameters
+		localPopCount := popCount + len(g.currentFunction.parameters)
 
 		g.stackSize -= uint(localPopCount)
 		g.variables = g.variables[0 : len(g.variables)-localPopCount]
@@ -778,17 +813,74 @@ func (g *Generator) createLabel(labelCtx ...string) string {
 	return fmt.Sprintf("label%d%s", g.labelCount, suffix)
 }
 
+type _Type interface {
+	getType() string
+}
+
+func _typeFromNodeType(n NodeType) (_Type, error) {
+	switch n := n.(type) {
+	case NodePointerType:
+		sub, err := _typeFromNodeType(n.subType)
+		if err != nil {
+			return nil, err
+		}
+
+		return _PointerType{
+			subType: sub,
+		}, nil
+	case NodePureType:
+		return _typeFromNodeType(n.baseType)
+	case NodeBoolType:
+		return boolType{}, nil
+	case NodeIntType:
+		return intType{}, nil
+	case NodeCharType:
+		return charType{}, nil
+	default:
+		return nil, fmt.Errorf("unknown type: %T", n)
+	}
+
+}
+
+type boolType struct{}
+
+func (boolType) getType() string {
+	return "B"
+}
+
+type intType struct{}
+
+func (intType) getType() string {
+	return "I"
+}
+
+type charType struct{}
+
+func (charType) getType() string {
+	return "C"
+}
+
+type _PointerType struct {
+	subType _Type
+}
+
+func (p _PointerType) getType() string {
+	return "P" + p.subType.getType()
+}
+
 type Variable struct {
 	name     string
 	stackLoc uint
 
 	isParameter bool
+	_type       _Type
 }
 
 type Function struct {
 	name        string
+	signature   string
 	returnCount int
-	parameters  int
+	parameters  []_Type
 
 	scopeIndex int
 }

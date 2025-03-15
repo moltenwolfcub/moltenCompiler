@@ -34,12 +34,25 @@ func (p *Parser) ParseProg() (NodeProg, error) {
 
 func (p *Parser) ParseStmt() (NodeStmt, error) {
 	if p.mustTryConsume(_var).HasValue() {
+		node := NodeStmtVarDeclare{}
+
+		typedIdent := TypedIdentifier{}
 
 		tok, err := p.tryConsume(identifier, "expected variable identifier after `var`")
 		if err != nil {
 			return nil, err
 		}
-		node := NodeStmtVarDeclare{tok}
+
+		typedIdent.ident = tok
+
+		_type, err := p.ParseType()
+		if err != nil {
+			return nil, err
+		}
+
+		typedIdent._type = _type
+
+		node.value = typedIdent
 
 		_, err = p.tryConsume(semiColon, "missing ';'")
 		if err != nil {
@@ -192,7 +205,17 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			if err != nil {
 				break
 			}
-			node.params = append(node.params, ident)
+			_type, err := p.ParseType()
+			if err != nil {
+				return nil, err
+			}
+
+			param := TypedIdentifier{
+				ident: ident,
+				_type: _type,
+			}
+
+			node.params = append(node.params, param)
 
 			_, err = p.tryConsume(comma, "optional so this should never error")
 			if err != nil {
@@ -520,6 +543,35 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 
 var errMissingExpr error = errors.New("expected expression")
 
+func (p *Parser) ParseType() (NodeType, error) {
+	if tok := p.mustTryConsume(asterisk); tok.HasValue() {
+		_type, err := p.ParseType()
+		if err != nil {
+			return nil, err
+		}
+		return NodePointerType{_type}, nil
+	} else {
+		baseType, err := p.ParseBaseType()
+		if err != nil {
+			return nil, err
+		}
+		return NodePureType{baseType}, nil
+	}
+}
+
+func (p *Parser) ParseBaseType() (NodeBaseType, error) {
+	if tok := p.mustTryConsume(typeBool); tok.HasValue() {
+		return NodeBoolType{_bool: tok.MustGetValue()}, nil
+	} else if tok := p.mustTryConsume(typeInt); tok.HasValue() {
+		return NodeIntType{_int: tok.MustGetValue()}, nil
+	} else if tok := p.mustTryConsume(typeChar); tok.HasValue() {
+		return NodeCharType{_char: tok.MustGetValue()}, nil
+	}
+	return nil, errMissingBaseType
+}
+
+var errMissingBaseType error = errors.New("expected base type")
+
 func (p Parser) peek(offset ...int) opt.Optional[Token] {
 	var offsetAmount int
 	if len(offset) == 1 {
@@ -565,6 +617,53 @@ func (p *Parser) error(message string) error {
 	return lineInfo.PositionedError(message)
 }
 
+type TypedIdentifier struct {
+	ident Token
+	_type NodeType
+}
+
+type NodeType interface {
+	IsNodeType()
+}
+
+type NodePureType struct {
+	baseType NodeBaseType
+}
+
+func (NodePureType) IsNodeType() {}
+
+type NodePointerType struct {
+	subType NodeType
+}
+
+func (NodePointerType) IsNodeType() {}
+
+type NodeBaseType interface {
+	NodeType
+	IsNodeBaseType()
+}
+
+type NodeBoolType struct {
+	_bool Token
+}
+
+func (NodeBoolType) IsNodeBaseType() {}
+func (NodeBoolType) IsNodeType()     {}
+
+type NodeIntType struct {
+	_int Token
+}
+
+func (NodeIntType) IsNodeBaseType() {}
+func (NodeIntType) IsNodeType()     {}
+
+type NodeCharType struct {
+	_char Token
+}
+
+func (NodeCharType) IsNodeBaseType() {}
+func (NodeCharType) IsNodeType()     {}
+
 type NodeProg struct {
 	stmts []NodeStmt
 }
@@ -574,7 +673,7 @@ type NodeStmt interface {
 }
 
 type NodeStmtVarDeclare struct {
-	ident Token
+	value TypedIdentifier
 }
 
 func (NodeStmtVarDeclare) IsNodeStmt() {}
@@ -622,7 +721,7 @@ func (NodeStmtContinue) IsNodeStmt() {}
 
 type NodeStmtFunctionDefinition struct {
 	ident   Token
-	params  []Token
+	params  []TypedIdentifier
 	returns string
 	body    NodeScope
 }

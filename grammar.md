@@ -76,7 +76,7 @@ $$
 
 	[\textcolor{orange}{type}] &\to \begin{cases}
 		[\textcolor{orange}{baseType}]\\
-		*[\textcolor{orange}{baseType}]\\
+		*[\textcolor{orange}{type}]\\
 	\end{cases}
 	\\
 	[\textcolor{orange}{baseType}] &\to \begin{cases}

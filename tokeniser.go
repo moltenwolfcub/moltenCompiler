@@ -34,6 +34,10 @@ const (
 	_return
 	syscall
 	ampersand
+
+	typeBool
+	typeInt
+	typeChar
 )
 
 func (t TokenType) GetBinPrec() opt.Optional[int] {
@@ -198,6 +202,12 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 				tokens = append(tokens, Token{tokenType: _return, lineInfo: t.currentLineInfo})
 			} else if string(buf) == "syscall" {
 				tokens = append(tokens, Token{tokenType: syscall, lineInfo: t.currentLineInfo})
+			} else if string(buf) == "bool" {
+				tokens = append(tokens, Token{tokenType: typeBool, lineInfo: t.currentLineInfo})
+			} else if string(buf) == "int" {
+				tokens = append(tokens, Token{tokenType: typeInt, lineInfo: t.currentLineInfo})
+			} else if string(buf) == "char" {
+				tokens = append(tokens, Token{tokenType: typeChar, lineInfo: t.currentLineInfo})
 			} else {
 				tokens = append(tokens, Token{tokenType: identifier, value: opt.ToOptional(string(buf)), lineInfo: t.currentLineInfo})
 			}

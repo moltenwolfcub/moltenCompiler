@@ -17,7 +17,7 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	program, err := loadProgram("code/" + os.Args[1])
+	program, err := loadProgram(os.Args[1])
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -68,7 +68,10 @@ func checkCLA() error {
 func loadProgram(fileName string) (string, error) {
 	file, err := os.ReadFile(fileName)
 	if err != nil {
-		return "", errors.New("cannot read the file")
+		file, err = os.ReadFile("code/" + fileName)
+		if err != nil {
+			return "", errors.New("cannot read the file")
+		}
 	}
 
 	return string(file), nil
