@@ -50,6 +50,7 @@ $$
 	\end{cases}
 	\\
 	[\textcolor{orange}{int}\textcolor{red}{Term}] &\to \begin{cases}
+		-[\textcolor{orange}{int}\textcolor{lime}{term}]\\
 		\text{intLiteral}\\
 		\textcolor{yellow}{varIdent}\\
 		([\textcolor{orange}{int}\textcolor{lime}{expr}])\\
