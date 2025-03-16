@@ -381,7 +381,13 @@ func (p *Parser) ParseIntExpr(minPrecedence ...int) (NodeExpr, error) {
 var errMissingExpr error = errors.New("expected expression")
 
 func (p *Parser) ParseIntTerm() (NodeTerm, error) {
-	if tok := p.mustTryConsume(intLiteral); tok.HasValue() {
+	if p.mustTryConsume(minus).HasValue() {
+		term, err := p.ParseIntTerm()
+		if err != nil {
+			return nil, err
+		}
+		return NodeTermNegativeTerm{term}, nil
+	} else if tok := p.mustTryConsume(intLiteral); tok.HasValue() {
 		return NodeTermIntLiteral{tok.MustGetValue()}, nil
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == identifier {
 		if p.peek(1).MustGetValue().tokenType == openRoundBracket {
@@ -795,6 +801,13 @@ type NodeTerm interface {
 	NodeExpr
 	IsNodeTerm()
 }
+
+type NodeTermNegativeTerm struct {
+	term NodeTerm
+}
+
+func (NodeTermNegativeTerm) IsNodeTerm() {}
+func (NodeTermNegativeTerm) IsNodeExpr() {}
 
 type NodeTermIntLiteral struct {
 	intLiteral Token

@@ -543,6 +543,16 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 	output := ""
 
 	switch term := rawTerm.(type) {
+	case NodeTermNegativeTerm:
+		subTerm, err := g.GenTerm(term.term)
+		if err != nil {
+			return "", err
+		}
+		output += subTerm
+
+		output += g.pop("rax")
+		output += "\tneg rax\n"
+		output += g.push("rax")
 	case NodeTermIntLiteral:
 		output += "\tmov rax, " + term.intLiteral.value.MustGetValue() + "\n"
 		output += g.push("rax")
