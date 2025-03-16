@@ -211,7 +211,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined variable: '%s'", variableName))
 		}
 
-		expr, err := g.GenExpr(stmt.expr)
+		expr, err := g.GenIntExpr(stmt.expr)
 		if err != nil {
 			return "", err
 		}
@@ -238,7 +238,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			return "", stmt.ident.lineInfo.PositionedError(fmt.Sprintf("undefined variable: '%s'", variableName))
 		}
 
-		expr, err := g.GenExpr(stmt.expr)
+		expr, err := g.GenIntExpr(stmt.expr)
 		if err != nil {
 			return "", err
 		}
@@ -273,7 +273,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 
 		output += startLabel + ":\n"
 
-		expr, err := g.GenExpr(stmt.expr)
+		expr, err := g.GenIntExpr(stmt.expr)
 		if err != nil {
 			return "", err
 		}
@@ -337,7 +337,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		}
 
 		for i, expr := range stmt.returns {
-			expr, err := g.GenExpr(expr)
+			expr, err := g.GenIntExpr(expr)
 			if err != nil {
 				return "", err
 			}
@@ -357,7 +357,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 		usedArgs := len(stmt.arguments)
 
 		for _, e := range stmt.arguments {
-			expr, err := g.GenExpr(e)
+			expr, err := g.GenIntExpr(e)
 			if err != nil {
 				return "", err
 			}
@@ -409,7 +409,7 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	reversed := stmt.params
 	slices.Reverse(reversed)
 	for _, p := range reversed {
-		expr, err := g.GenExpr(p)
+		expr, err := g.GenIntExpr(p)
 		if err != nil {
 			return "", 0, err
 		}
@@ -426,18 +426,18 @@ func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	return output, function.returnCount, nil
 }
 
-func (g *Generator) GenExpr(rawExpr NodeExpr) (string, error) {
+func (g *Generator) GenIntExpr(rawExpr NodeExpr) (string, error) {
 	output := ""
 
 	switch expr := rawExpr.(type) {
 	case NodeTerm:
-		term, err := g.GenTerm(expr)
+		term, err := g.GenIntTerm(expr)
 		if err != nil {
 			return "", err
 		}
 		output += term
 	case NodeBinExpr:
-		binExpr, err := g.GenBinExpr(expr)
+		binExpr, err := g.GenIntBinExpr(expr)
 		if err != nil {
 			return "", err
 		}
@@ -448,16 +448,16 @@ func (g *Generator) GenExpr(rawExpr NodeExpr) (string, error) {
 	return output, nil
 }
 
-func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
+func (g *Generator) GenIntBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 	output := ""
 	switch binExpr := rawBinExpr.(type) {
 	case NodeBinExprAdd:
-		expr, err := g.GenExpr(binExpr.left)
+		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
 		}
 		output += expr
-		expr, err = g.GenExpr(binExpr.right)
+		expr, err = g.GenIntExpr(binExpr.right)
 		if err != nil {
 			return "", err
 		}
@@ -468,12 +468,12 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += "\tadd rax, rbx\n"
 		output += g.push("rax")
 	case NodeBinExprSubtract:
-		expr, err := g.GenExpr(binExpr.left)
+		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
 		}
 		output += expr
-		expr, err = g.GenExpr(binExpr.right)
+		expr, err = g.GenIntExpr(binExpr.right)
 		if err != nil {
 			return "", err
 		}
@@ -484,12 +484,12 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += "\tsub rax, rbx\n"
 		output += g.push("rax")
 	case NodeBinExprMultiply:
-		expr, err := g.GenExpr(binExpr.left)
+		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
 		}
 		output += expr
-		expr, err = g.GenExpr(binExpr.right)
+		expr, err = g.GenIntExpr(binExpr.right)
 		if err != nil {
 			return "", err
 		}
@@ -500,12 +500,12 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += "\tmul rbx\n"
 		output += g.push("rax")
 	case NodeBinExprDivide:
-		expr, err := g.GenExpr(binExpr.left)
+		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
 		}
 		output += expr
-		expr, err = g.GenExpr(binExpr.right)
+		expr, err = g.GenIntExpr(binExpr.right)
 		if err != nil {
 			return "", err
 		}
@@ -517,12 +517,12 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += "\tdiv rbx\n"
 		output += g.push("rax")
 	case NodeBinExprModulo:
-		expr, err := g.GenExpr(binExpr.left)
+		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
 		}
 		output += expr
-		expr, err = g.GenExpr(binExpr.right)
+		expr, err = g.GenIntExpr(binExpr.right)
 		if err != nil {
 			return "", err
 		}
@@ -539,12 +539,12 @@ func (g *Generator) GenBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 	return output, nil
 }
 
-func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
+func (g *Generator) GenIntTerm(rawTerm NodeTerm) (string, error) {
 	output := ""
 
 	switch term := rawTerm.(type) {
 	case NodeTermNegativeTerm:
-		subTerm, err := g.GenTerm(term.term)
+		subTerm, err := g.GenIntTerm(term.term)
 		if err != nil {
 			return "", err
 		}
@@ -592,7 +592,7 @@ func (g *Generator) GenTerm(rawTerm NodeTerm) (string, error) {
 		output += funcCall
 
 	case NodeTermRoundBracketExpr:
-		expr, err := g.GenExpr(term.expr)
+		expr, err := g.GenIntExpr(term.expr)
 		if err != nil {
 			return "", err
 		}
@@ -700,7 +700,7 @@ func (g *Generator) GenFunctionBody(body NodeScope, params []Variable) (string, 
 func (g *Generator) GenIf(_if NodeStmtIf) (string, error) {
 	output := ""
 
-	expr, err := g.GenExpr(_if.expr)
+	expr, err := g.GenIntExpr(_if.expr)
 	if err != nil {
 		return "", err
 	}
