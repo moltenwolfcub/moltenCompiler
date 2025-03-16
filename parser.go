@@ -73,7 +73,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			}
 			p.consume()
 
-			expr, err := p.ParseExpr()
+			expr, err := p.ParseIntExpr()
 			if err != nil {
 				return nil, err
 			}
@@ -115,7 +115,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			return nil, err
 		}
 
-		expr, err := p.ParseExpr()
+		expr, err := p.ParseIntExpr()
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +150,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			return nil, err
 		}
 
-		node.expr, err = p.ParseExpr()
+		node.expr, err = p.ParseIntExpr()
 		if err != nil {
 			return nil, err
 		}
@@ -239,7 +239,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		node := NodeStmtReturn{_return: tok.MustGetValue()}
 
 		for {
-			expr, err := p.ParseExpr()
+			expr, err := p.ParseIntExpr()
 			if err == errMissingExpr {
 				break
 			} else if err != nil {
@@ -269,7 +269,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 		}
 
 		for {
-			expr, err := p.ParseExpr()
+			expr, err := p.ParseIntExpr()
 			if err == errMissingExpr {
 				break
 			} else if err != nil {
@@ -308,7 +308,7 @@ var errMissingStmt error = errors.New("expected statement but couldn't find one"
 
 // based off of this principle and algorithm:
 // https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing
-func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
+func (p *Parser) ParseIntExpr(minPrecedence ...int) (NodeExpr, error) {
 	var minPrec int
 	if len(minPrecedence) == 1 {
 		minPrec = minPrecedence[0]
@@ -316,7 +316,7 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 		minPrec = 0
 	}
 
-	lhsTerm, err := p.ParseTerm()
+	lhsTerm, err := p.ParseIntTerm()
 	if err == errMissingTerm {
 		return nil, errMissingExpr
 	}
@@ -339,7 +339,7 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 
 		nextMinPrec := currentPrec.MustGetValue() + 1
 
-		rhsExpr, err := p.ParseExpr(nextMinPrec)
+		rhsExpr, err := p.ParseIntExpr(nextMinPrec)
 		if err != nil {
 			return nil, err
 		}
@@ -380,7 +380,7 @@ func (p *Parser) ParseExpr(minPrecedence ...int) (NodeExpr, error) {
 
 var errMissingExpr error = errors.New("expected expression")
 
-func (p *Parser) ParseTerm() (NodeTerm, error) {
+func (p *Parser) ParseIntTerm() (NodeTerm, error) {
 	if tok := p.mustTryConsume(intLiteral); tok.HasValue() {
 		return NodeTermIntLiteral{tok.MustGetValue()}, nil
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == identifier {
@@ -390,7 +390,7 @@ func (p *Parser) ParseTerm() (NodeTerm, error) {
 			return NodeTermIdentifier{p.consume()}, nil
 		}
 	} else if p.mustTryConsume(openRoundBracket).HasValue() {
-		expr, err := p.ParseExpr()
+		expr, err := p.ParseIntExpr()
 		if err != nil {
 			return nil, err
 		}
@@ -455,7 +455,7 @@ func (p *Parser) ParseIf() (NodeStmtIf, error) {
 		return NodeStmtIf{}, err
 	}
 
-	node.expr, err = p.ParseExpr()
+	node.expr, err = p.ParseIntExpr()
 	if err != nil {
 		return NodeStmtIf{}, err
 	}
@@ -521,7 +521,7 @@ func (p *Parser) ParseFuncCall() (NodeFunctionCall, error) {
 	}
 
 	for {
-		expr, err := p.ParseExpr()
+		expr, err := p.ParseIntExpr()
 		if err == errMissingExpr {
 			break
 		} else if err != nil {
