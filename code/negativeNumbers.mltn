@@ -1,3 +1,5 @@
 var a int;
 
 a = -5;
+
+syscall(60, a);
