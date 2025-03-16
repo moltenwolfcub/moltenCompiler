@@ -69,13 +69,13 @@ $$
 	\end{cases}
 	\\
 	[\textcolor{orange}{bool}\textcolor{red}{Term}] &\to \begin{cases}
-		![\textcolor{orange}{bool}\textcolor{lime}{expr}]\\
+		![\textcolor{orange}{bool}\textcolor{lime}{term}]\\
 		\textcolor{yellow}{varIdent}\\
 		([\textcolor{orange}{bool}\textcolor{lime}{expr}])\\
 		[\textcolor{lime}{funcCall}]\\
 		\&\textcolor{yellow}{varIdent}\\
-		[\textcolor{orange}{bool}\textcolor{red}{Term}] [\textcolor{lime}{relOp}] [\textcolor{orange}{bool}\textcolor{red}{Term}]\\
-		[\textcolor{orange}{int}\textcolor{red}{Term}] [\textcolor{lime}{relOp}] [\textcolor{orange}{int}\textcolor{red}{Term}]\\
+		[\textcolor{orange}{bool}\textcolor{lime}{term}] [\textcolor{lime}{relOp}] [\textcolor{orange}{bool}\textcolor{lime}{term}]\\
+		[\textcolor{orange}{int}\textcolor{lime}{expr}] [\textcolor{lime}{relOp}] [\textcolor{orange}{int}\textcolor{lime}{expr}]\\
 	\end{cases}
 	\\
 	[\textcolor{red}{relOp}] &\to \begin{cases}
