@@ -27,7 +27,7 @@ $$
 		*\textcolor{yellow}{varIdent}=[\textcolor{lime}{expr}];\\
 		[\textcolor{lime}{scope}]\\
 		[\textcolor{lime}{if}]\\
-		\textcolor{cyan}{while}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
+		\textcolor{cyan}{while}([\textcolor{orange}{bool}\textcolor{lime}{expr}])[\textcolor{lime}{scope}]\\
 		\textcolor{cyan}{break};\\
 		\textcolor{cyan}{continue};\\
 		\textcolor{cyan}{func}\space\text{intLiteral}\space\textcolor{yellow}{funcIdent}(\textcolor{yellow}{param1}\space[\textcolor{orange}{type}],^*)[\textcolor{lime}{scope}]\\
@@ -36,31 +36,60 @@ $$
 		\textcolor{cyan}{syscall}([\textcolor{lime}{expr}],^*);\\
 	\end{cases}
 	\\
-	[\textcolor{red}{expr}] &\to \begin{cases}
-		[\textcolor{lime}{term}]\\
-		[\textcolor{lime}{binExpr}]\\
+	[\textcolor{orange}{int}\textcolor{red}{Expr}] &\to \begin{cases}
+		[\textcolor{orange}{int}\textcolor{lime}{term}]\\
+		[\textcolor{orange}{int}\textcolor{lime}{binExpr}]\\
 	\end{cases}
 	\\
-	[\textcolor{red}{binExpr}] &\to \begin{cases}
-		[\textcolor{lime}{expr}]\%[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
-		[\textcolor{lime}{expr}]*[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
-		[\textcolor{lime}{expr}]/[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
-		[\textcolor{lime}{expr}]+[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\
-		[\textcolor{lime}{expr}]-[\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\
+	[\textcolor{orange}{int}\textcolor{red}{BinExpr}] &\to \begin{cases}
+		[\textcolor{orange}{int}\textcolor{lime}{expr}]\%[\textcolor{orange}{int}\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
+		[\textcolor{orange}{int}\textcolor{lime}{expr}]*[\textcolor{orange}{int}\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
+		[\textcolor{orange}{int}\textcolor{lime}{expr}]/[\textcolor{orange}{int}\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
+		[\textcolor{orange}{int}\textcolor{lime}{expr}]+[\textcolor{orange}{int}\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\
+		[\textcolor{orange}{int}\textcolor{lime}{expr}]-[\textcolor{orange}{int}\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\
 	\end{cases}
 	\\
-	[\textcolor{red}{term}] &\to \begin{cases}
+	[\textcolor{orange}{int}\textcolor{red}{Term}] &\to \begin{cases}
 		\text{intLiteral}\\
 		\textcolor{yellow}{varIdent}\\
-		([\textcolor{lime}{expr}])\\
+		([\textcolor{orange}{int}\textcolor{lime}{expr}])\\
 		[\textcolor{lime}{funcCall}]\\
 		\&\textcolor{yellow}{varIdent}\\
-		*\textcolor{yellow}{varIdent}\\
+		*\textcolor{yellow}{varIdent} &&&\text{(need to move this to separate pointer type)}\\ 
+	\end{cases}
+	\\
+	[\textcolor{orange}{bool}\textcolor{red}{Expr}] &\to \begin{cases}
+		[\textcolor{orange}{bool}\textcolor{lime}{term}]\\
+		[\textcolor{orange}{bool}\textcolor{lime}{binExpr}]\\
+	\end{cases}
+	\\
+	[\textcolor{orange}{bool}\textcolor{red}{BinExpr}] &\to \begin{cases}
+		[\textcolor{orange}{bool}\textcolor{lime}{expr}]\&\&[\textcolor{orange}{cool}\textcolor{lime}{expr}] & \textcolor{magenta}{prec=1}\\
+		[\textcolor{orange}{bool}\textcolor{lime}{expr}]||[\textcolor{orange}{bool}\textcolor{lime}{expr}] & \textcolor{magenta}{prec=0}\\
+	\end{cases}
+	\\
+	[\textcolor{orange}{bool}\textcolor{red}{Term}] &\to \begin{cases}
+		![\textcolor{orange}{bool}\textcolor{lime}{expr}]\\
+		\textcolor{yellow}{varIdent}\\
+		([\textcolor{orange}{bool}\textcolor{lime}{expr}])\\
+		[\textcolor{lime}{funcCall}]\\
+		\&\textcolor{yellow}{varIdent}\\
+		[\textcolor{orange}{bool}\textcolor{red}{Term}] [\textcolor{lime}{relOp}] [\textcolor{orange}{bool}\textcolor{red}{Term}]\\
+		[\textcolor{orange}{int}\textcolor{red}{Term}] [\textcolor{lime}{relOp}] [\textcolor{orange}{int}\textcolor{red}{Term}]\\
+	\end{cases}
+	\\
+	[\textcolor{red}{relOp}] &\to \begin{cases}
+		==\\
+		!=\\
+		<\\
+		>\\
+		>=\\
+		<=\\
 	\end{cases}
 	\\
 	[\textcolor{red}{scope}] &\to \{[\textcolor{lime}{stmt}]^*\}
 	\\
-	[\textcolor{red}{if}] &\to \textcolor{cyan}{if}([\textcolor{lime}{expr}])[\textcolor{lime}{scope}]<\textcolor{cyan}{else}\space[\textcolor{lime}{else}]>\\
+	[\textcolor{red}{if}] &\to \textcolor{cyan}{if}([\textcolor{orange}{bool}\textcolor{lime}{expr}])[\textcolor{lime}{scope}]<\textcolor{cyan}{else}\space[\textcolor{lime}{else}]>\\
 	[\textcolor{red}{else}] &\to \begin{cases}
 		[\textcolor{lime}{if}]\\
 		[\textcolor{lime}{scope}]\\
