@@ -858,8 +858,8 @@ type NodeIntBinExpr interface {
 }
 
 type NodeIntBinExprAdd struct {
-	left  NodeExpr
-	right NodeExpr
+	left  NodeIntExpr
+	right NodeIntExpr
 }
 
 func (NodeIntBinExprAdd) IsNodeIntBinExpr() {}
@@ -867,8 +867,8 @@ func (NodeIntBinExprAdd) IsNodeIntExpr()    {}
 func (NodeIntBinExprAdd) IsNodeExpr()       {}
 
 type NodeIntBinExprSubtract struct {
-	left  NodeExpr
-	right NodeExpr
+	left  NodeIntExpr
+	right NodeIntExpr
 }
 
 func (NodeIntBinExprSubtract) IsNodeIntBinExpr() {}
@@ -876,8 +876,8 @@ func (NodeIntBinExprSubtract) IsNodeIntExpr()    {}
 func (NodeIntBinExprSubtract) IsNodeExpr()       {}
 
 type NodeIntBinExprMultiply struct {
-	left  NodeExpr
-	right NodeExpr
+	left  NodeIntExpr
+	right NodeIntExpr
 }
 
 func (NodeIntBinExprMultiply) IsNodeIntBinExpr() {}
@@ -885,8 +885,8 @@ func (NodeIntBinExprMultiply) IsNodeIntExpr()    {}
 func (NodeIntBinExprMultiply) IsNodeExpr()       {}
 
 type NodeIntBinExprDivide struct {
-	left  NodeExpr
-	right NodeExpr
+	left  NodeIntExpr
+	right NodeIntExpr
 }
 
 func (NodeIntBinExprDivide) IsNodeIntBinExpr() {}
@@ -894,8 +894,8 @@ func (NodeIntBinExprDivide) IsNodeIntExpr()    {}
 func (NodeIntBinExprDivide) IsNodeExpr()       {}
 
 type NodeIntBinExprModulo struct {
-	left  NodeExpr
-	right NodeExpr
+	left  NodeIntExpr
+	right NodeIntExpr
 }
 
 func (NodeIntBinExprModulo) IsNodeIntBinExpr() {}
@@ -980,8 +980,8 @@ type NodeBoolBinExpr interface {
 }
 
 type NodeBoolBinExprAnd struct {
-	left  NodeExpr
-	right NodeExpr
+	left  NodeBoolExpr
+	right NodeBoolExpr
 }
 
 func (NodeBoolBinExprAnd) IsNodeBoolBinExpr() {}
@@ -989,8 +989,8 @@ func (NodeBoolBinExprAnd) IsNodeBoolExpr()    {}
 func (NodeBoolBinExprAnd) IsNodeExpr()        {}
 
 type NodeBoolBinExprOr struct {
-	left  NodeExpr
-	right NodeExpr
+	left  NodeBoolExpr
+	right NodeBoolExpr
 }
 
 func (NodeBoolBinExprOr) IsNodeBoolBinExpr() {}
