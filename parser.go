@@ -243,7 +243,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			if err == errMissingExpr {
 				break
 			} else if err != nil {
-				return NodeFunctionCall{}, err
+				return NodeIntFunctionCall{}, err
 			}
 			node.returns = append(node.returns, expr)
 
@@ -344,30 +344,30 @@ func (p *Parser) ParseIntExpr(minPrecedence ...int) (NodeExpr, error) {
 			return nil, err
 		}
 
-		var expr NodeBinExpr
+		var expr NodeIntBinExpr
 		switch op.tokenType {
 		case plus:
-			expr = NodeBinExprAdd{
+			expr = NodeIntBinExprAdd{
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
 		case asterisk:
-			expr = NodeBinExprMultiply{
+			expr = NodeIntBinExprMultiply{
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
 		case minus:
-			expr = NodeBinExprSubtract{
+			expr = NodeIntBinExprSubtract{
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
 		case fslash:
-			expr = NodeBinExprDivide{
+			expr = NodeIntBinExprDivide{
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
 		case percent:
-			expr = NodeBinExprModulo{
+			expr = NodeIntBinExprModulo{
 				left:  lhsExpr,
 				right: rhsExpr,
 			}
@@ -380,20 +380,20 @@ func (p *Parser) ParseIntExpr(minPrecedence ...int) (NodeExpr, error) {
 
 var errMissingExpr error = errors.New("expected expression")
 
-func (p *Parser) ParseIntTerm() (NodeTerm, error) {
+func (p *Parser) ParseIntTerm() (NodeIntTerm, error) {
 	if p.mustTryConsume(minus).HasValue() {
 		term, err := p.ParseIntTerm()
 		if err != nil {
 			return nil, err
 		}
-		return NodeTermNegativeTerm{term}, nil
+		return NodeIntTermNegativeTerm{term}, nil
 	} else if tok := p.mustTryConsume(intLiteral); tok.HasValue() {
-		return NodeTermIntLiteral{tok.MustGetValue()}, nil
+		return NodeIntTermLiteral{tok.MustGetValue()}, nil
 	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == identifier {
 		if p.peek(1).MustGetValue().tokenType == openRoundBracket {
 			return p.ParseFuncCall()
 		} else {
-			return NodeTermIdentifier{p.consume()}, nil
+			return NodeIntTermIdentifier{p.consume()}, nil
 		}
 	} else if p.mustTryConsume(openRoundBracket).HasValue() {
 		expr, err := p.ParseIntExpr()
@@ -404,19 +404,19 @@ func (p *Parser) ParseIntTerm() (NodeTerm, error) {
 		if err != nil {
 			return nil, err
 		}
-		return NodeTermRoundBracketExpr{expr}, nil
+		return NodeIntTermRoundBracketExpr{expr}, nil
 	} else if p.mustTryConsume(ampersand).HasValue() {
 		variable, err := p.tryConsume(identifier, "expected variable identifier after '&'")
 		if err != nil {
 			return nil, err
 		}
-		return NodeTermPointer{variable}, nil
+		return NodeIntTermPointer{variable}, nil
 	} else if p.mustTryConsume(asterisk).HasValue() {
 		variable, err := p.tryConsume(identifier, "expected variable identifier after '*'")
 		if err != nil {
 			return nil, err
 		}
-		return NodeTermPointerDereference{variable}, nil
+		return NodeIntTermPointerDereference{variable}, nil
 	}
 	return nil, errMissingTerm
 }
@@ -515,15 +515,15 @@ func (p *Parser) ParseElse() (opt.Optional[NodeElse], error) {
 	}
 }
 
-func (p *Parser) ParseFuncCall() (NodeFunctionCall, error) {
+func (p *Parser) ParseFuncCall() (NodeIntFunctionCall, error) {
 
-	node := NodeFunctionCall{
+	node := NodeIntFunctionCall{
 		ident: p.consume(),
 	}
 
 	_, err := p.tryConsume(openRoundBracket, "missing '('")
 	if err != nil {
-		return NodeFunctionCall{}, err
+		return NodeIntFunctionCall{}, err
 	}
 
 	for {
@@ -531,7 +531,7 @@ func (p *Parser) ParseFuncCall() (NodeFunctionCall, error) {
 		if err == errMissingExpr {
 			break
 		} else if err != nil {
-			return NodeFunctionCall{}, err
+			return NodeIntFunctionCall{}, err
 		}
 		node.params = append(node.params, expr)
 
@@ -543,7 +543,7 @@ func (p *Parser) ParseFuncCall() (NodeFunctionCall, error) {
 
 	_, err = p.tryConsume(closeRoundBracket, "missing ')'")
 	if err != nil {
-		return NodeFunctionCall{}, err
+		return NodeIntFunctionCall{}, err
 	}
 
 	return node, nil
@@ -752,106 +752,106 @@ type NodeExpr interface {
 	IsNodeExpr()
 }
 
-type NodeBinExpr interface {
+type NodeIntBinExpr interface {
 	NodeExpr
 	IsNodeBinExpr()
 }
 
-type NodeBinExprAdd struct {
+type NodeIntBinExprAdd struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
-func (NodeBinExprAdd) IsNodeBinExpr() {}
-func (NodeBinExprAdd) IsNodeExpr()    {}
+func (NodeIntBinExprAdd) IsNodeBinExpr() {}
+func (NodeIntBinExprAdd) IsNodeExpr()    {}
 
-type NodeBinExprSubtract struct {
+type NodeIntBinExprSubtract struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
-func (NodeBinExprSubtract) IsNodeBinExpr() {}
-func (NodeBinExprSubtract) IsNodeExpr()    {}
+func (NodeIntBinExprSubtract) IsNodeBinExpr() {}
+func (NodeIntBinExprSubtract) IsNodeExpr()    {}
 
-type NodeBinExprMultiply struct {
+type NodeIntBinExprMultiply struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
-func (NodeBinExprMultiply) IsNodeBinExpr() {}
-func (NodeBinExprMultiply) IsNodeExpr()    {}
+func (NodeIntBinExprMultiply) IsNodeBinExpr() {}
+func (NodeIntBinExprMultiply) IsNodeExpr()    {}
 
-type NodeBinExprDivide struct {
+type NodeIntBinExprDivide struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
-func (NodeBinExprDivide) IsNodeBinExpr() {}
-func (NodeBinExprDivide) IsNodeExpr()    {}
+func (NodeIntBinExprDivide) IsNodeBinExpr() {}
+func (NodeIntBinExprDivide) IsNodeExpr()    {}
 
-type NodeBinExprModulo struct {
+type NodeIntBinExprModulo struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
-func (NodeBinExprModulo) IsNodeBinExpr() {}
-func (NodeBinExprModulo) IsNodeExpr()    {}
+func (NodeIntBinExprModulo) IsNodeBinExpr() {}
+func (NodeIntBinExprModulo) IsNodeExpr()    {}
 
-type NodeTerm interface {
+type NodeIntTerm interface {
 	NodeExpr
 	IsNodeTerm()
 }
 
-type NodeTermNegativeTerm struct {
-	term NodeTerm
+type NodeIntTermNegativeTerm struct {
+	term NodeIntTerm
 }
 
-func (NodeTermNegativeTerm) IsNodeTerm() {}
-func (NodeTermNegativeTerm) IsNodeExpr() {}
+func (NodeIntTermNegativeTerm) IsNodeTerm() {}
+func (NodeIntTermNegativeTerm) IsNodeExpr() {}
 
-type NodeTermIntLiteral struct {
+type NodeIntTermLiteral struct {
 	intLiteral Token
 }
 
-func (NodeTermIntLiteral) IsNodeTerm() {}
-func (NodeTermIntLiteral) IsNodeExpr() {}
+func (NodeIntTermLiteral) IsNodeTerm() {}
+func (NodeIntTermLiteral) IsNodeExpr() {}
 
-type NodeTermIdentifier struct {
+type NodeIntTermIdentifier struct {
 	identifier Token
 }
 
-func (NodeTermIdentifier) IsNodeTerm() {}
-func (NodeTermIdentifier) IsNodeExpr() {}
+func (NodeIntTermIdentifier) IsNodeTerm() {}
+func (NodeIntTermIdentifier) IsNodeExpr() {}
 
-type NodeFunctionCall struct {
+type NodeIntFunctionCall struct {
 	ident  Token
 	params []NodeExpr
 }
 
-func (NodeFunctionCall) IsNodeStmt() {}
-func (NodeFunctionCall) IsNodeTerm() {}
-func (NodeFunctionCall) IsNodeExpr() {}
+func (NodeIntFunctionCall) IsNodeStmt() {}
+func (NodeIntFunctionCall) IsNodeTerm() {}
+func (NodeIntFunctionCall) IsNodeExpr() {}
 
-type NodeTermRoundBracketExpr struct {
+type NodeIntTermRoundBracketExpr struct {
 	expr NodeExpr
 }
 
-func (NodeTermRoundBracketExpr) IsNodeTerm() {}
-func (NodeTermRoundBracketExpr) IsNodeExpr() {}
+func (NodeIntTermRoundBracketExpr) IsNodeTerm() {}
+func (NodeIntTermRoundBracketExpr) IsNodeExpr() {}
 
-type NodeTermPointer struct {
+type NodeIntTermPointer struct {
 	identifier Token
 }
 
-func (NodeTermPointer) IsNodeTerm() {}
-func (NodeTermPointer) IsNodeExpr() {}
+func (NodeIntTermPointer) IsNodeTerm() {}
+func (NodeIntTermPointer) IsNodeExpr() {}
 
-type NodeTermPointerDereference struct {
+type NodeIntTermPointerDereference struct {
 	identifier Token
 }
 
-func (NodeTermPointerDereference) IsNodeTerm() {}
-func (NodeTermPointerDereference) IsNodeExpr() {}
+func (NodeIntTermPointerDereference) IsNodeTerm() {}
+func (NodeIntTermPointerDereference) IsNodeExpr() {}
 
 type NodeScope struct {
 	stmts []NodeStmt

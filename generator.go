@@ -316,7 +316,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			this is just here to keep the type switch happy.
 		*/
 
-	case NodeFunctionCall:
+	case NodeIntFunctionCall:
 		funcCall, retCount, err := g.GenFuncCall(stmt)
 		if err != nil {
 			return "", err
@@ -375,7 +375,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 	return output, nil
 }
 
-func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
+func (g *Generator) GenFuncCall(stmt NodeIntFunctionCall) (string, int, error) {
 	output := ""
 
 	functionName := stmt.ident.value.MustGetValue()
@@ -430,13 +430,13 @@ func (g *Generator) GenIntExpr(rawExpr NodeExpr) (string, error) {
 	output := ""
 
 	switch expr := rawExpr.(type) {
-	case NodeTerm:
+	case NodeIntTerm:
 		term, err := g.GenIntTerm(expr)
 		if err != nil {
 			return "", err
 		}
 		output += term
-	case NodeBinExpr:
+	case NodeIntBinExpr:
 		binExpr, err := g.GenIntBinExpr(expr)
 		if err != nil {
 			return "", err
@@ -448,10 +448,10 @@ func (g *Generator) GenIntExpr(rawExpr NodeExpr) (string, error) {
 	return output, nil
 }
 
-func (g *Generator) GenIntBinExpr(rawBinExpr NodeBinExpr) (string, error) {
+func (g *Generator) GenIntBinExpr(rawBinExpr NodeIntBinExpr) (string, error) {
 	output := ""
 	switch binExpr := rawBinExpr.(type) {
-	case NodeBinExprAdd:
+	case NodeIntBinExprAdd:
 		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
@@ -467,7 +467,7 @@ func (g *Generator) GenIntBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += g.pop("rax")
 		output += "\tadd rax, rbx\n"
 		output += g.push("rax")
-	case NodeBinExprSubtract:
+	case NodeIntBinExprSubtract:
 		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
@@ -483,7 +483,7 @@ func (g *Generator) GenIntBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += g.pop("rax")
 		output += "\tsub rax, rbx\n"
 		output += g.push("rax")
-	case NodeBinExprMultiply:
+	case NodeIntBinExprMultiply:
 		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
@@ -499,7 +499,7 @@ func (g *Generator) GenIntBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += g.pop("rax")
 		output += "\tmul rbx\n"
 		output += g.push("rax")
-	case NodeBinExprDivide:
+	case NodeIntBinExprDivide:
 		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
@@ -516,7 +516,7 @@ func (g *Generator) GenIntBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 		output += "\tmov rdx, 0\n"
 		output += "\tdiv rbx\n"
 		output += g.push("rax")
-	case NodeBinExprModulo:
+	case NodeIntBinExprModulo:
 		expr, err := g.GenIntExpr(binExpr.left)
 		if err != nil {
 			return "", err
@@ -539,11 +539,11 @@ func (g *Generator) GenIntBinExpr(rawBinExpr NodeBinExpr) (string, error) {
 	return output, nil
 }
 
-func (g *Generator) GenIntTerm(rawTerm NodeTerm) (string, error) {
+func (g *Generator) GenIntTerm(rawTerm NodeIntTerm) (string, error) {
 	output := ""
 
 	switch term := rawTerm.(type) {
-	case NodeTermNegativeTerm:
+	case NodeIntTermNegativeTerm:
 		subTerm, err := g.GenIntTerm(term.term)
 		if err != nil {
 			return "", err
@@ -553,11 +553,11 @@ func (g *Generator) GenIntTerm(rawTerm NodeTerm) (string, error) {
 		output += g.pop("rax")
 		output += "\tneg rax\n"
 		output += g.push("rax")
-	case NodeTermIntLiteral:
+	case NodeIntTermLiteral:
 		output += "\tmov rax, " + term.intLiteral.value.MustGetValue() + "\n"
 		output += g.push("rax")
 
-	case NodeTermIdentifier:
+	case NodeIntTermIdentifier:
 		variableName := term.identifier.value.MustGetValue()
 
 		var variable Variable
@@ -579,7 +579,7 @@ func (g *Generator) GenIntTerm(rawTerm NodeTerm) (string, error) {
 			output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
 		}
 
-	case NodeFunctionCall:
+	case NodeIntFunctionCall:
 		funcCall, retCount, err := g.GenFuncCall(term)
 		if err != nil {
 			return "", err
@@ -591,14 +591,14 @@ func (g *Generator) GenIntTerm(rawTerm NodeTerm) (string, error) {
 
 		output += funcCall
 
-	case NodeTermRoundBracketExpr:
+	case NodeIntTermRoundBracketExpr:
 		expr, err := g.GenIntExpr(term.expr)
 		if err != nil {
 			return "", err
 		}
 		output += expr
 
-	case NodeTermPointer:
+	case NodeIntTermPointer:
 		variableName := term.identifier.value.MustGetValue()
 
 		var variable Variable
@@ -621,7 +621,7 @@ func (g *Generator) GenIntTerm(rawTerm NodeTerm) (string, error) {
 		}
 		output += g.push("rax")
 
-	case NodeTermPointerDereference:
+	case NodeIntTermPointerDereference:
 		variableName := term.identifier.value.MustGetValue()
 
 		var variable Variable
