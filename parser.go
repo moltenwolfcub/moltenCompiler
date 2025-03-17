@@ -645,6 +645,7 @@ type TypedIdentifier struct {
 	_type NodeType
 }
 
+// region types
 type NodeType interface {
 	IsNodeType()
 }
@@ -687,9 +688,13 @@ type NodeCharType struct {
 func (NodeCharType) IsNodeBaseType() {}
 func (NodeCharType) IsNodeType()     {}
 
+// endregion
+
 type NodeProg struct {
 	stmts []NodeStmt
 }
+
+// region statements
 
 type NodeStmt interface {
 	IsNodeStmt()
@@ -765,9 +770,15 @@ type NodeStmtSyscall struct {
 
 func (NodeStmtSyscall) IsNodeStmt() {}
 
+//endregion
+
+//region expressions
+
 type NodeExpr interface {
 	IsNodeExpr()
 }
+
+//region intExprs
 
 type NodeIntExpr interface {
 	NodeExpr
@@ -887,6 +898,10 @@ func (NodeIntTermPointerDereference) IsNodeIntTerm() {}
 func (NodeIntTermPointerDereference) IsNodeIntExpr() {}
 func (NodeIntTermPointerDereference) IsNodeExpr()    {}
 
+//endregion
+
+//region boolExprs
+
 type NodeBoolExpr interface {
 	NodeExpr
 	IsNodeBoolExpr()
@@ -901,6 +916,10 @@ type NodeBoolTerm interface {
 	NodeBoolExpr
 	IsNodeBoolTerm()
 }
+
+// endregion
+
+// endregion
 
 type NodeScope struct {
 	stmts []NodeStmt
