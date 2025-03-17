@@ -776,7 +776,7 @@ type NodeIntExpr interface {
 
 type NodeIntBinExpr interface {
 	NodeIntExpr
-	IsNodeBinExpr()
+	IsNodeIntBinExpr()
 }
 
 type NodeIntBinExprAdd struct {
@@ -784,56 +784,56 @@ type NodeIntBinExprAdd struct {
 	right NodeExpr
 }
 
-func (NodeIntBinExprAdd) IsNodeBinExpr() {}
-func (NodeIntBinExprAdd) IsNodeIntExpr() {}
-func (NodeIntBinExprAdd) IsNodeExpr()    {}
+func (NodeIntBinExprAdd) IsNodeIntBinExpr() {}
+func (NodeIntBinExprAdd) IsNodeIntExpr()    {}
+func (NodeIntBinExprAdd) IsNodeExpr()       {}
 
 type NodeIntBinExprSubtract struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
-func (NodeIntBinExprSubtract) IsNodeBinExpr() {}
-func (NodeIntBinExprSubtract) IsNodeIntExpr() {}
-func (NodeIntBinExprSubtract) IsNodeExpr()    {}
+func (NodeIntBinExprSubtract) IsNodeIntBinExpr() {}
+func (NodeIntBinExprSubtract) IsNodeIntExpr()    {}
+func (NodeIntBinExprSubtract) IsNodeExpr()       {}
 
 type NodeIntBinExprMultiply struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
-func (NodeIntBinExprMultiply) IsNodeBinExpr() {}
-func (NodeIntBinExprMultiply) IsNodeIntExpr() {}
-func (NodeIntBinExprMultiply) IsNodeExpr()    {}
+func (NodeIntBinExprMultiply) IsNodeIntBinExpr() {}
+func (NodeIntBinExprMultiply) IsNodeIntExpr()    {}
+func (NodeIntBinExprMultiply) IsNodeExpr()       {}
 
 type NodeIntBinExprDivide struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
-func (NodeIntBinExprDivide) IsNodeBinExpr() {}
-func (NodeIntBinExprDivide) IsNodeIntExpr() {}
-func (NodeIntBinExprDivide) IsNodeExpr()    {}
+func (NodeIntBinExprDivide) IsNodeIntBinExpr() {}
+func (NodeIntBinExprDivide) IsNodeIntExpr()    {}
+func (NodeIntBinExprDivide) IsNodeExpr()       {}
 
 type NodeIntBinExprModulo struct {
 	left  NodeExpr
 	right NodeExpr
 }
 
-func (NodeIntBinExprModulo) IsNodeBinExpr() {}
-func (NodeIntBinExprModulo) IsNodeIntExpr() {}
-func (NodeIntBinExprModulo) IsNodeExpr()    {}
+func (NodeIntBinExprModulo) IsNodeIntBinExpr() {}
+func (NodeIntBinExprModulo) IsNodeIntExpr()    {}
+func (NodeIntBinExprModulo) IsNodeExpr()       {}
 
 type NodeIntTerm interface {
 	NodeIntExpr
-	IsNodeTerm()
+	IsNodeIntTerm()
 }
 
 type NodeIntTermNegativeTerm struct {
 	term NodeIntTerm
 }
 
-func (NodeIntTermNegativeTerm) IsNodeTerm()    {}
+func (NodeIntTermNegativeTerm) IsNodeIntTerm() {}
 func (NodeIntTermNegativeTerm) IsNodeIntExpr() {}
 func (NodeIntTermNegativeTerm) IsNodeExpr()    {}
 
@@ -841,7 +841,7 @@ type NodeIntTermLiteral struct {
 	intLiteral Token
 }
 
-func (NodeIntTermLiteral) IsNodeTerm()    {}
+func (NodeIntTermLiteral) IsNodeIntTerm() {}
 func (NodeIntTermLiteral) IsNodeIntExpr() {}
 func (NodeIntTermLiteral) IsNodeExpr()    {}
 
@@ -849,7 +849,7 @@ type NodeIntTermIdentifier struct {
 	identifier Token
 }
 
-func (NodeIntTermIdentifier) IsNodeTerm()    {}
+func (NodeIntTermIdentifier) IsNodeIntTerm() {}
 func (NodeIntTermIdentifier) IsNodeIntExpr() {}
 func (NodeIntTermIdentifier) IsNodeExpr()    {}
 
@@ -859,7 +859,7 @@ type NodeIntFunctionCall struct {
 }
 
 func (NodeIntFunctionCall) IsNodeStmt()    {}
-func (NodeIntFunctionCall) IsNodeTerm()    {}
+func (NodeIntFunctionCall) IsNodeIntTerm() {}
 func (NodeIntFunctionCall) IsNodeIntExpr() {}
 func (NodeIntFunctionCall) IsNodeExpr()    {}
 
@@ -867,7 +867,7 @@ type NodeIntTermRoundBracketExpr struct {
 	expr NodeExpr
 }
 
-func (NodeIntTermRoundBracketExpr) IsNodeTerm()    {}
+func (NodeIntTermRoundBracketExpr) IsNodeIntTerm() {}
 func (NodeIntTermRoundBracketExpr) IsNodeIntExpr() {}
 func (NodeIntTermRoundBracketExpr) IsNodeExpr()    {}
 
@@ -875,7 +875,7 @@ type NodeIntTermPointer struct {
 	identifier Token
 }
 
-func (NodeIntTermPointer) IsNodeTerm()    {}
+func (NodeIntTermPointer) IsNodeIntTerm() {}
 func (NodeIntTermPointer) IsNodeIntExpr() {}
 func (NodeIntTermPointer) IsNodeExpr()    {}
 
@@ -883,9 +883,24 @@ type NodeIntTermPointerDereference struct {
 	identifier Token
 }
 
-func (NodeIntTermPointerDereference) IsNodeTerm()    {}
+func (NodeIntTermPointerDereference) IsNodeIntTerm() {}
 func (NodeIntTermPointerDereference) IsNodeIntExpr() {}
 func (NodeIntTermPointerDereference) IsNodeExpr()    {}
+
+type NodeBoolExpr interface {
+	NodeExpr
+	IsNodeBoolExpr()
+}
+
+type NodeBoolBinExpr interface {
+	NodeBoolExpr
+	IsNodeBoolBinExpr()
+}
+
+type NodeBoolTerm interface {
+	NodeBoolExpr
+	IsNodeBoolTerm()
+}
 
 type NodeScope struct {
 	stmts []NodeStmt
