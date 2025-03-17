@@ -36,6 +36,11 @@ $$
 		\textcolor{cyan}{syscall}([\textcolor{lime}{expr}],^*);\\
 	\end{cases}
 	\\
+	[\textcolor{red}{expr}] &\to \begin{cases}
+		[\textcolor{orange}{int}\textcolor{lime}{expr}]\\
+		[\textcolor{orange}{bool}\textcolor{lime}{expr}]\\
+	\end{cases}
+	\\
 	[\textcolor{orange}{int}\textcolor{red}{Expr}] &\to \begin{cases}
 		[\textcolor{orange}{int}\textcolor{lime}{term}]\\
 		[\textcolor{orange}{int}\textcolor{lime}{binExpr}]\\
