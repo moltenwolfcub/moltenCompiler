@@ -334,7 +334,7 @@ func (p *Parser) ParseIntExpr(minPrecedence ...int) (NodeIntExpr, error) {
 	}
 
 	lhsTerm, err := p.ParseIntTerm()
-	if err == errMissingTerm {
+	if err == errMissingIntTerm {
 		return nil, errMissingIntExpr
 	}
 	if err != nil {
@@ -348,7 +348,7 @@ func (p *Parser) ParseIntExpr(minPrecedence ...int) (NodeIntExpr, error) {
 		if !currentToken.HasValue() {
 			break
 		}
-		currentPrec := currentToken.MustGetValue().tokenType.GetBinPrec()
+		currentPrec := currentToken.MustGetValue().tokenType.GetIntBinPrec()
 		if !currentPrec.HasValue() || currentPrec.MustGetValue() < minPrec { //prolly meant to be <=
 			break
 		}
@@ -435,10 +435,77 @@ func (p *Parser) ParseIntTerm() (NodeIntTerm, error) {
 		}
 		return NodeIntTermPointerDereference{variable}, nil
 	}
-	return nil, errMissingTerm
+	return nil, errMissingIntTerm
 }
 
-var errMissingTerm error = errors.New("expected term but couldn't find one")
+var errMissingIntTerm error = errors.New("expected integer term but couldn't find one")
+
+func (p *Parser) ParseBoolExpr(minPrecedence ...int) (NodeBoolExpr, error) {
+	var minPrec int
+	if len(minPrecedence) == 1 {
+		minPrec = minPrecedence[0]
+	} else {
+		minPrec = 0
+	}
+
+	lhsTerm, err := p.ParseBoolTerm()
+	if err == errMissingBoolTerm {
+		return nil, errMissingBoolExpr
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	lhsExpr := NodeBoolExpr(lhsTerm)
+
+	for {
+		currentToken := p.peek()
+		if !currentToken.HasValue() {
+			break
+		}
+		currentPrec := currentToken.MustGetValue().tokenType.GetBoolBinPrec()
+		if !currentPrec.HasValue() || currentPrec.MustGetValue() < minPrec { //prolly meant to be <=
+			break
+		}
+		op := p.consume()
+		if !p.peek().HasValue() || p.peek().MustGetValue().tokenType != op.tokenType {
+			return nil, errors.New("boolean expressions must have a double operator E.G.(&&, ||)")
+		}
+		p.consume()
+
+		nextMinPrec := currentPrec.MustGetValue() + 1
+
+		rhsExpr, err := p.ParseBoolExpr(nextMinPrec)
+		if err != nil {
+			return nil, err
+		}
+
+		var expr NodeBoolBinExpr
+		switch op.tokenType {
+		case ampersand:
+			expr = NodeBoolBinExprAnd{
+				left:  lhsExpr,
+				right: rhsExpr,
+			}
+		case pipe:
+			expr = NodeBoolBinExprOr{
+				left:  lhsExpr,
+				right: rhsExpr,
+			}
+		}
+		lhsExpr = expr
+
+	}
+	return lhsExpr, nil
+}
+
+var errMissingBoolExpr error = errors.New("expected boolean expression")
+
+func (p *Parser) ParseBoolTerm() (NodeBoolTerm, error) {
+	return nil, errMissingBoolTerm
+}
+
+var errMissingBoolTerm error = errors.New("expected boolean term but couldn't find one")
 
 func (p *Parser) ParseScope() (NodeScope, error) {
 	if !p.mustTryConsume(openCurlyBracket).HasValue() {
@@ -911,6 +978,24 @@ type NodeBoolBinExpr interface {
 	NodeBoolExpr
 	IsNodeBoolBinExpr()
 }
+
+type NodeBoolBinExprAnd struct {
+	left  NodeExpr
+	right NodeExpr
+}
+
+func (NodeBoolBinExprAnd) IsNodeBoolBinExpr() {}
+func (NodeBoolBinExprAnd) IsNodeBoolExpr()    {}
+func (NodeBoolBinExprAnd) IsNodeExpr()        {}
+
+type NodeBoolBinExprOr struct {
+	left  NodeExpr
+	right NodeExpr
+}
+
+func (NodeBoolBinExprOr) IsNodeBoolBinExpr() {}
+func (NodeBoolBinExprOr) IsNodeBoolExpr()    {}
+func (NodeBoolBinExprOr) IsNodeExpr()        {}
 
 type NodeBoolTerm interface {
 	NodeBoolExpr

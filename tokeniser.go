@@ -34,17 +34,29 @@ const (
 	_return
 	syscall
 	ampersand
+	pipe
 
 	typeBool
 	typeInt
 	typeChar
 )
 
-func (t TokenType) GetBinPrec() opt.Optional[int] {
+func (t TokenType) GetIntBinPrec() opt.Optional[int] {
 	switch t {
 	case plus, minus:
 		return opt.ToOptional(0)
 	case asterisk, fslash, percent:
+		return opt.ToOptional(1)
+	default:
+		return opt.Optional[int]{}
+	}
+}
+
+func (t TokenType) GetBoolBinPrec() opt.Optional[int] {
+	switch t {
+	case pipe:
+		return opt.ToOptional(0)
+	case ampersand:
 		return opt.ToOptional(1)
 	default:
 		return opt.Optional[int]{}
@@ -143,6 +155,11 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 		} else if t.peek().MustGetValue() == '&' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: ampersand, lineInfo: t.currentLineInfo})
+			t.currentLineInfo.IncColumn()
+
+		} else if t.peek().MustGetValue() == '|' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: pipe, lineInfo: t.currentLineInfo})
 			t.currentLineInfo.IncColumn()
 
 		} else if t.peek().MustGetValue() == '/' {
