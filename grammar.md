@@ -60,8 +60,8 @@ $$
 		\textcolor{yellow}{varIdent}\\
 		([\textcolor{orange}{int}\textcolor{lime}{expr}])\\
 		[\textcolor{lime}{funcCall}]\\
-		\&\textcolor{yellow}{varIdent}\\
-		*\textcolor{yellow}{varIdent} &&&\text{(need to move this to separate pointer type)}\\ 
+		\&\textcolor{yellow}{varIdent}&&&\text{(need to move this to separate pointer type)}\\
+		*\textcolor{yellow}{varIdent}\\ 
 	\end{cases}
 	\\
 	[\textcolor{orange}{bool}\textcolor{red}{Expr}] &\to \begin{cases}
@@ -79,7 +79,7 @@ $$
 		\textcolor{yellow}{varIdent}\\
 		([\textcolor{orange}{bool}\textcolor{lime}{expr}])\\
 		[\textcolor{lime}{funcCall}]\\
-		\&\textcolor{yellow}{varIdent}\\
+		*\textcolor{yellow}{varIdent}\\
 		[\textcolor{orange}{bool}\textcolor{lime}{term}] [\textcolor{lime}{relOp}] [\textcolor{orange}{bool}\textcolor{lime}{term}]\\
 		[\textcolor{orange}{int}\textcolor{lime}{expr}] [\textcolor{lime}{relOp}] [\textcolor{orange}{int}\textcolor{lime}{expr}]\\
 	\end{cases}
