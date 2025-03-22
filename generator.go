@@ -316,7 +316,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 			this is just here to keep the type switch happy.
 		*/
 
-	case NodeIntFunctionCall:
+	case NodeFunctionCall:
 		funcCall, retCount, err := g.GenFuncCall(stmt)
 		if err != nil {
 			return "", err
@@ -375,7 +375,7 @@ func (g *Generator) GenStmt(rawStmt NodeStmt) (string, error) {
 	return output, nil
 }
 
-func (g *Generator) GenFuncCall(stmt NodeIntFunctionCall) (string, int, error) {
+func (g *Generator) GenFuncCall(stmt NodeFunctionCall) (string, int, error) {
 	output := ""
 
 	functionName := stmt.ident.value.MustGetValue()
@@ -579,7 +579,7 @@ func (g *Generator) GenIntTerm(rawTerm NodeIntTerm) (string, error) {
 			output += g.push(fmt.Sprintf("QWORD [rsp + %v]", (g.stackSize-variable.stackLoc-1)*8))
 		}
 
-	case NodeIntFunctionCall:
+	case NodeFunctionCall:
 		funcCall, retCount, err := g.GenFuncCall(term)
 		if err != nil {
 			return "", err

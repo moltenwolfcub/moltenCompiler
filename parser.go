@@ -243,7 +243,7 @@ func (p *Parser) ParseStmt() (NodeStmt, error) {
 			if err == errMissingIntExpr {
 				break
 			} else if err != nil {
-				return NodeIntFunctionCall{}, err
+				return NodeStmtReturn{}, err
 			}
 			node.returns = append(node.returns, expr)
 
@@ -313,10 +313,10 @@ func (p *Parser) ParseExpr() (NodeExpr, error) {
 		return intExpr, nil
 	}
 
-	//boolExpr, err := p.ParseBoolExpr()
-	//if err == nil {
-	//	return boolExpr, nil
-	//}
+	boolExpr, err := p.ParseBoolExpr()
+	if err == nil {
+		return boolExpr, nil
+	}
 
 	return nil, errMissingExpr
 }
@@ -599,15 +599,15 @@ func (p *Parser) ParseElse() (opt.Optional[NodeElse], error) {
 	}
 }
 
-func (p *Parser) ParseFuncCall() (NodeIntFunctionCall, error) {
+func (p *Parser) ParseFuncCall() (NodeFunctionCall, error) {
 
-	node := NodeIntFunctionCall{
+	node := NodeFunctionCall{
 		ident: p.consume(),
 	}
 
 	_, err := p.tryConsume(openRoundBracket, "missing '('")
 	if err != nil {
-		return NodeIntFunctionCall{}, err
+		return NodeFunctionCall{}, err
 	}
 
 	for {
@@ -615,7 +615,7 @@ func (p *Parser) ParseFuncCall() (NodeIntFunctionCall, error) {
 		if err == errMissingIntExpr {
 			break
 		} else if err != nil {
-			return NodeIntFunctionCall{}, err
+			return NodeFunctionCall{}, err
 		}
 		node.params = append(node.params, expr)
 
@@ -627,7 +627,7 @@ func (p *Parser) ParseFuncCall() (NodeIntFunctionCall, error) {
 
 	_, err = p.tryConsume(closeRoundBracket, "missing ')'")
 	if err != nil {
-		return NodeIntFunctionCall{}, err
+		return NodeFunctionCall{}, err
 	}
 
 	return node, nil
@@ -845,6 +845,16 @@ type NodeExpr interface {
 	IsNodeExpr()
 }
 
+type NodeFunctionCall struct {
+	ident  Token
+	params []NodeExpr
+}
+
+func (NodeFunctionCall) IsNodeStmt()    {}
+func (NodeFunctionCall) IsNodeIntTerm() {}
+func (NodeFunctionCall) IsNodeIntExpr() {}
+func (NodeFunctionCall) IsNodeExpr()    {}
+
 //region intExprs
 
 type NodeIntExpr interface {
@@ -931,18 +941,8 @@ func (NodeIntTermIdentifier) IsNodeIntTerm() {}
 func (NodeIntTermIdentifier) IsNodeIntExpr() {}
 func (NodeIntTermIdentifier) IsNodeExpr()    {}
 
-type NodeIntFunctionCall struct {
-	ident  Token
-	params []NodeExpr
-}
-
-func (NodeIntFunctionCall) IsNodeStmt()    {}
-func (NodeIntFunctionCall) IsNodeIntTerm() {}
-func (NodeIntFunctionCall) IsNodeIntExpr() {}
-func (NodeIntFunctionCall) IsNodeExpr()    {}
-
 type NodeIntTermRoundBracketExpr struct {
-	expr NodeExpr
+	expr NodeIntExpr
 }
 
 func (NodeIntTermRoundBracketExpr) IsNodeIntTerm() {}
