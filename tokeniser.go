@@ -35,6 +35,7 @@ const (
 	syscall
 	ampersand
 	pipe
+	exclamation
 
 	typeBool
 	typeInt
@@ -160,6 +161,11 @@ func (t *Tokeniser) Tokenise() ([]Token, error) {
 		} else if t.peek().MustGetValue() == '|' {
 			t.consume()
 			tokens = append(tokens, Token{tokenType: pipe, lineInfo: t.currentLineInfo})
+			t.currentLineInfo.IncColumn()
+
+		} else if t.peek().MustGetValue() == '!' {
+			t.consume()
+			tokens = append(tokens, Token{tokenType: exclamation, lineInfo: t.currentLineInfo})
 			t.currentLineInfo.IncColumn()
 
 		} else if t.peek().MustGetValue() == '/' {

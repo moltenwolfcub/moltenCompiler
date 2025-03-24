@@ -621,7 +621,7 @@ func (g *Generator) GenIntTerm(rawTerm NodeIntTerm) (string, error) {
 		}
 		output += g.push("rax")
 
-	case NodeIntTermPointerDereference:
+	case NodeTermPointerDereference:
 		variableName := term.identifier.value.MustGetValue()
 
 		var variable Variable

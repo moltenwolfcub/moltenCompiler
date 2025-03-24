@@ -433,7 +433,7 @@ func (p *Parser) ParseIntTerm() (NodeIntTerm, error) {
 		if err != nil {
 			return nil, err
 		}
-		return NodeIntTermPointerDereference{variable}, nil
+		return NodeTermPointerDereference{variable}, nil
 	}
 	return nil, errMissingIntTerm
 }
@@ -502,6 +502,36 @@ func (p *Parser) ParseBoolExpr(minPrecedence ...int) (NodeBoolExpr, error) {
 var errMissingBoolExpr error = errors.New("expected boolean expression")
 
 func (p *Parser) ParseBoolTerm() (NodeBoolTerm, error) {
+	if p.mustTryConsume(exclamation).HasValue() {
+		term, err := p.ParseBoolTerm()
+		if err != nil {
+			return nil, err
+		}
+		return NodeBoolTermNotTerm{term}, nil
+	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == identifier {
+		if p.peek(1).MustGetValue().tokenType == openRoundBracket {
+			return p.ParseFuncCall()
+		} else {
+			return NodeBoolTermIdentifier{p.consume()}, nil
+		}
+	} else if p.mustTryConsume(openRoundBracket).HasValue() {
+		expr, err := p.ParseBoolExpr()
+		if err != nil {
+			return nil, err
+		}
+		_, err = p.tryConsume(closeRoundBracket, "expected ')'")
+		if err != nil {
+			return nil, err
+		}
+		return NodeBoolTermRoundBracketExpr{expr}, nil
+	} else if p.mustTryConsume(asterisk).HasValue() {
+		variable, err := p.tryConsume(identifier, "expected variable identifier after '*'")
+		if err != nil {
+			return nil, err
+		}
+		return NodeTermPointerDereference{variable}, nil
+	}
+
 	return nil, errMissingBoolTerm
 }
 
@@ -850,10 +880,22 @@ type NodeFunctionCall struct {
 	params []NodeExpr
 }
 
-func (NodeFunctionCall) IsNodeStmt()    {}
-func (NodeFunctionCall) IsNodeIntTerm() {}
-func (NodeFunctionCall) IsNodeIntExpr() {}
-func (NodeFunctionCall) IsNodeExpr()    {}
+func (NodeFunctionCall) IsNodeStmt()     {}
+func (NodeFunctionCall) IsNodeIntTerm()  {}
+func (NodeFunctionCall) IsNodeIntExpr()  {}
+func (NodeFunctionCall) IsNodeBoolTerm() {}
+func (NodeFunctionCall) IsNodeBoolExpr() {}
+func (NodeFunctionCall) IsNodeExpr()     {}
+
+type NodeTermPointerDereference struct {
+	identifier Token
+}
+
+func (NodeTermPointerDereference) IsNodeIntTerm()  {}
+func (NodeTermPointerDereference) IsNodeIntExpr()  {}
+func (NodeTermPointerDereference) IsNodeBoolTerm() {}
+func (NodeTermPointerDereference) IsNodeBoolExpr() {}
+func (NodeTermPointerDereference) IsNodeExpr()     {}
 
 //region intExprs
 
@@ -957,14 +999,6 @@ func (NodeIntTermPointer) IsNodeIntTerm() {}
 func (NodeIntTermPointer) IsNodeIntExpr() {}
 func (NodeIntTermPointer) IsNodeExpr()    {}
 
-type NodeIntTermPointerDereference struct {
-	identifier Token
-}
-
-func (NodeIntTermPointerDereference) IsNodeIntTerm() {}
-func (NodeIntTermPointerDereference) IsNodeIntExpr() {}
-func (NodeIntTermPointerDereference) IsNodeExpr()    {}
-
 //endregion
 
 //region boolExprs
@@ -1002,9 +1036,93 @@ type NodeBoolTerm interface {
 	IsNodeBoolTerm()
 }
 
+type NodeBoolTermNotTerm struct {
+	term NodeBoolTerm
+}
+
+func (NodeBoolTermNotTerm) IsNodeBoolTerm() {}
+func (NodeBoolTermNotTerm) IsNodeBoolExpr() {}
+func (NodeBoolTermNotTerm) IsNodeExpr()     {}
+
+type NodeBoolTermIdentifier struct {
+	identifier Token
+}
+
+func (NodeBoolTermIdentifier) IsNodeBoolTerm() {}
+func (NodeBoolTermIdentifier) IsNodeBoolExpr() {}
+func (NodeBoolTermIdentifier) IsNodeExpr()     {}
+
+type NodeBoolTermRoundBracketExpr struct {
+	expr NodeBoolExpr
+}
+
+func (NodeBoolTermRoundBracketExpr) IsNodeBoolTerm() {}
+func (NodeBoolTermRoundBracketExpr) IsNodeBoolExpr() {}
+func (NodeBoolTermRoundBracketExpr) IsNodeExpr()     {}
+
+type NodeBoolComparisonBool struct {
+	left  NodeBoolTerm
+	right NodeBoolTerm
+	op    RelativeOperator
+}
+
+func (NodeBoolComparisonBool) IsNodeBoolTerm() {}
+func (NodeBoolComparisonBool) IsNodeBoolExpr() {}
+func (NodeBoolComparisonBool) IsNodeExpr()     {}
+
+type NodeBoolComparisonInt struct {
+	left  NodeIntExpr
+	right NodeIntExpr
+	op    RelativeOperator
+}
+
+func (NodeBoolComparisonInt) IsNodeBoolTerm() {}
+func (NodeBoolComparisonInt) IsNodeBoolExpr() {}
+func (NodeBoolComparisonInt) IsNodeExpr()     {}
+
 // endregion
 
 // endregion
+
+type RelativeOperator interface {
+	IsRelativeOperator()
+}
+
+type NodeRelativeOpEqual struct {
+	equal Token
+}
+
+func (NodeRelativeOpEqual) IsRelativeOperator() {}
+
+type NodeRelativeOpNotEqual struct {
+	notEqual Token
+}
+
+func (NodeRelativeOpNotEqual) IsRelativeOperator() {}
+
+type NodeRelativeOpLessThan struct {
+	lessThan Token
+}
+
+func (NodeRelativeOpLessThan) IsRelativeOperator() {}
+
+type NodeRelativeOpGreaterThan struct {
+	greaterThan Token
+}
+
+func (NodeRelativeOpGreaterThan) IsRelativeOperator() {}
+
+type NodeRelativeOpLessThanOrEqual struct {
+	lessThanOrEqual Token
+}
+
+func (NodeRelativeOpLessThanOrEqual) IsRelativeOperator() {}
+
+type NodeRelativeOpGreaterThanOrEqual struct {
+	greaterThanOrEqual Token
+}
+
+func (NodeRelativeOpGreaterThanOrEqual) IsRelativeOperator() {}
 
 type NodeScope struct {
 	stmts []NodeStmt
