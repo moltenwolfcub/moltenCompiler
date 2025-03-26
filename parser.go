@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	opt "github.com/moltenwolfcub/moltenCompiler/optional"
 )
@@ -307,15 +308,14 @@ var errSyscallArgs error = errors.New("syscalls can't have more than 7 arguments
 var errMissingStmt error = errors.New("expected statement but couldn't find one")
 
 func (p *Parser) ParseExpr() (NodeExpr, error) {
-	intExpr, err := p.ParseIntExpr()
-
-	if err == nil {
-		return intExpr, nil
-	}
-
 	boolExpr, err := p.ParseBoolExpr()
 	if err == nil {
 		return boolExpr, nil
+	}
+
+	intExpr, err := p.ParseIntExpr()
+	if err == nil {
+		return intExpr, nil
 	}
 
 	return nil, errMissingExpr
@@ -502,40 +502,113 @@ func (p *Parser) ParseBoolExpr(minPrecedence ...int) (NodeBoolExpr, error) {
 var errMissingBoolExpr error = errors.New("expected boolean expression")
 
 func (p *Parser) ParseBoolTerm() (NodeBoolTerm, error) {
-	if p.mustTryConsume(exclamation).HasValue() {
-		term, err := p.ParseBoolTerm()
+	BoolTermWrapper := func() (NodeBoolTerm, error) {
+		if p.mustTryConsume(exclamation).HasValue() {
+			term, err := p.ParseBoolTerm()
+			if err != nil {
+				return nil, err
+			}
+			return NodeBoolTermNotTerm{term}, nil
+		} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == identifier {
+			if p.peek(1).MustGetValue().tokenType == openRoundBracket {
+				return p.ParseFuncCall()
+			} else {
+				return NodeBoolTermIdentifier{p.consume()}, nil
+			}
+		} else if p.mustTryConsume(openRoundBracket).HasValue() {
+			expr, err := p.ParseBoolExpr()
+			if err != nil {
+				return nil, err
+			}
+			_, err = p.tryConsume(closeRoundBracket, "expected ')'")
+			if err != nil {
+				return nil, err
+			}
+			return NodeBoolTermRoundBracketExpr{expr}, nil
+		} else if p.mustTryConsume(asterisk).HasValue() {
+			variable, err := p.tryConsume(identifier, "expected variable identifier after '*'")
+			if err != nil {
+				return nil, err
+			}
+			return NodeTermPointerDereference{variable}, nil
+		}
+		return nil, errMissingBoolTerm
+	}
+
+	parsedBool, err := BoolTermWrapper()
+	if err == nil {
+		relativeOp, err := p.ParseRelativeOperator()
 		if err != nil {
-			return nil, err
+			return parsedBool, nil //if no relOp
 		}
-		return NodeBoolTermNotTerm{term}, nil
-	} else if p.peek().HasValue() && p.peek().MustGetValue().tokenType == identifier {
-		if p.peek(1).MustGetValue().tokenType == openRoundBracket {
-			return p.ParseFuncCall()
-		} else {
-			return NodeBoolTermIdentifier{p.consume()}, nil
-		}
-	} else if p.mustTryConsume(openRoundBracket).HasValue() {
-		expr, err := p.ParseBoolExpr()
+
+		rhsParsedBool, err := BoolTermWrapper()
 		if err != nil {
-			return nil, err
+			return nil, errors.New("found a relative operator but no term following it") // err if relOp but no rhs
 		}
-		_, err = p.tryConsume(closeRoundBracket, "expected ')'")
+		return NodeBoolComparisonBool{
+			left:  parsedBool,
+			right: rhsParsedBool,
+			op:    relativeOp,
+		}, nil
+	} else if err != errMissingBoolTerm {
+		return nil, err
+	}
+
+	parsedInt, err := p.ParseIntExpr()
+	if err == nil {
+		relativeOp, err := p.ParseRelativeOperator()
 		if err != nil {
-			return nil, err
+			return nil, errors.New("found intTerm but no relative operator. can't use intTerm in boolean expression")
 		}
-		return NodeBoolTermRoundBracketExpr{expr}, nil
-	} else if p.mustTryConsume(asterisk).HasValue() {
-		variable, err := p.tryConsume(identifier, "expected variable identifier after '*'")
+
+		t := p.peek()
+		fmt.Println(t)
+
+		rhsParsedInt, err := p.ParseIntExpr()
 		if err != nil {
-			return nil, err
+			return nil, errors.New("found a relative operator but no term following it")
 		}
-		return NodeTermPointerDereference{variable}, nil
+		return NodeBoolComparisonInt{
+			left:  parsedInt,
+			right: rhsParsedInt,
+			op:    relativeOp,
+		}, nil
+	} else if err != errMissingIntExpr {
+		return nil, err
 	}
 
 	return nil, errMissingBoolTerm
+	//TODO: return p.currentIndex to initial value in event of failure
 }
 
 var errMissingBoolTerm error = errors.New("expected boolean term but couldn't find one")
+
+func (p *Parser) ParseRelativeOperator() (NodeRelativeOperator, error) {
+	if tok := p.mustTryConsume(equals); tok.HasValue() {
+		if p.mustTryConsume(equals).HasValue() {
+			return NodeRelativeOpEqual{equal: tok.MustGetValue()}, nil
+		}
+	} else if tok := p.mustTryConsume(exclamation); tok.HasValue() {
+		if p.mustTryConsume(equals).HasValue() {
+			return NodeRelativeOpNotEqual{notEqual: tok.MustGetValue()}, nil
+		}
+	} else if tok := p.mustTryConsume(openTriangleBracket); tok.HasValue() {
+		if p.mustTryConsume(equals).HasValue() {
+			return NodeRelativeOpLessThanOrEqual{lessThanOrEqual: tok.MustGetValue()}, nil
+		}
+		return NodeRelativeOpLessThan{lessThan: tok.MustGetValue()}, nil
+	} else if tok := p.mustTryConsume(closeTriangleBracket); tok.HasValue() {
+		if p.mustTryConsume(equals).HasValue() {
+			return NodeRelativeOpGreaterThanOrEqual{greaterThanOrEqual: p.consume()}, nil
+		}
+		return NodeRelativeOpGreaterThan{greaterThan: tok.MustGetValue()}, nil
+	}
+
+	return nil, errMissingRelativeOperator
+}
+
+var errMissingRelativeOperator error = errors.New("expected relative operator but couldn't find one")
 
 func (p *Parser) ParseScope() (NodeScope, error) {
 	if !p.mustTryConsume(openCurlyBracket).HasValue() {
@@ -1063,7 +1136,7 @@ func (NodeBoolTermRoundBracketExpr) IsNodeExpr()     {}
 type NodeBoolComparisonBool struct {
 	left  NodeBoolTerm
 	right NodeBoolTerm
-	op    RelativeOperator
+	op    NodeRelativeOperator
 }
 
 func (NodeBoolComparisonBool) IsNodeBoolTerm() {}
@@ -1073,7 +1146,7 @@ func (NodeBoolComparisonBool) IsNodeExpr()     {}
 type NodeBoolComparisonInt struct {
 	left  NodeIntExpr
 	right NodeIntExpr
-	op    RelativeOperator
+	op    NodeRelativeOperator
 }
 
 func (NodeBoolComparisonInt) IsNodeBoolTerm() {}
@@ -1084,7 +1157,7 @@ func (NodeBoolComparisonInt) IsNodeExpr()     {}
 
 // endregion
 
-type RelativeOperator interface {
+type NodeRelativeOperator interface {
 	IsRelativeOperator()
 }
 
