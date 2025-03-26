@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	opt "github.com/moltenwolfcub/moltenCompiler/optional"
 )
@@ -502,6 +501,9 @@ func (p *Parser) ParseBoolExpr(minPrecedence ...int) (NodeBoolExpr, error) {
 var errMissingBoolExpr error = errors.New("expected boolean expression")
 
 func (p *Parser) ParseBoolTerm() (NodeBoolTerm, error) {
+	returnIndex := p.currentIndex
+	defer func() { p.currentIndex = returnIndex }()
+
 	BoolTermWrapper := func() (NodeBoolTerm, error) {
 		if p.mustTryConsume(exclamation).HasValue() {
 			term, err := p.ParseBoolTerm()
@@ -546,6 +548,7 @@ func (p *Parser) ParseBoolTerm() (NodeBoolTerm, error) {
 		if err != nil {
 			return nil, errors.New("found a relative operator but no term following it") // err if relOp but no rhs
 		}
+		returnIndex = p.currentIndex
 		return NodeBoolComparisonBool{
 			left:  parsedBool,
 			right: rhsParsedBool,
@@ -562,13 +565,11 @@ func (p *Parser) ParseBoolTerm() (NodeBoolTerm, error) {
 			return nil, errors.New("found intTerm but no relative operator. can't use intTerm in boolean expression")
 		}
 
-		t := p.peek()
-		fmt.Println(t)
-
 		rhsParsedInt, err := p.ParseIntExpr()
 		if err != nil {
 			return nil, errors.New("found a relative operator but no term following it")
 		}
+		returnIndex = p.currentIndex
 		return NodeBoolComparisonInt{
 			left:  parsedInt,
 			right: rhsParsedInt,
@@ -579,7 +580,6 @@ func (p *Parser) ParseBoolTerm() (NodeBoolTerm, error) {
 	}
 
 	return nil, errMissingBoolTerm
-	//TODO: return p.currentIndex to initial value in event of failure
 }
 
 var errMissingBoolTerm error = errors.New("expected boolean term but couldn't find one")
